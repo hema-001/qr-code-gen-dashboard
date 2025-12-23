@@ -6,24 +6,33 @@ import { EyeCloseIcon, EyeIcon } from "@/icons";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import * as yup from "yup";
+
+const schema = yup.object().shape({
+  username: yup.string().required("Username is required"),
+  password: yup.string().required("Password is required"),
+});
 
 export default function SignInForm() {
   const router = useRouter();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setErrors({});
     setLoading(true);
 
     try {
+      await schema.validate({ username, password }, { abortEarly: false });
+
       const res = await fetch("/api/v1/admin/login", {
         method: "POST",
         headers: {
@@ -33,9 +42,11 @@ export default function SignInForm() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.log("Login failed with status:", res.status, errorText);
-        throw new Error("Login failed");
+        if (res.status === 401) {
+          throw new Error("Invalid username or password");
+        } else {
+          throw new Error("Login failed");
+        }
       }
 
       const data = await res.json();
@@ -50,9 +61,16 @@ export default function SignInForm() {
 
       router.push("/");
       router.refresh();
-    } catch (err) {
-      console.error(err);
-      setError("Invalid username or password");
+    } catch (err: any) {
+      if (err instanceof yup.ValidationError) {
+        const newErrors: { [key: string]: string } = {};
+        err.inner.forEach((error) => {
+          if (error.path) newErrors[error.path] = error.message;
+        });
+        setErrors(newErrors);
+      } else {
+        setError(err.message || "An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -88,6 +106,8 @@ export default function SignInForm() {
                     type="text" 
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    error={!!errors.username}
+                    hint={errors.username}
                   />
                 </div>
                 <div>
@@ -100,6 +120,7 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      error={!!errors.password}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -112,6 +133,9 @@ export default function SignInForm() {
                       )}
                     </span>
                   </div>
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                  )}
                 </div>
                 <div>
                   <Button className="w-full" size="sm" disabled={loading}>

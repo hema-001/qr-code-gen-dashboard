@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-interface User {
+export interface User {
   id: number;
   username: string;
   role: string;
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Store in localStorage/Cookies
     localStorage.setItem("user", JSON.stringify(newUser));
-    document.cookie = `token=${newToken}; path=/; max-age=86400; SameSite=Strict`;
+    document.cookie = `token=${newToken}; path=/; max-age=86400; SameSite=Strict`; // Add Secure=true in production
   };
 
   const logout = () => {

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
@@ -11,14 +12,29 @@ export function proxy(request: NextRequest) {
   // Check if the path is public
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
+  let isValidToken = false
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+      await jwtVerify(token, secret)
+      isValidToken = true
+    } catch (error) {
+      // Token is invalid or expired
+    }
+  }
+
   // If the user is not authenticated and trying to access a protected route
-  if (!token && !isPublicPath) {
+  if (!isValidToken && !isPublicPath) {
     // Redirect to the sign-in page
-    return NextResponse.redirect(new URL('/signin', request.url))
+    const response = NextResponse.redirect(new URL('/signin', request.url))
+    if (token) {
+      response.cookies.delete('token')
+    }
+    return response
   }
 
   // If the user is authenticated and trying to access the sign-in page
-  if (token && pathname.startsWith('/signin')) {
+  if (isValidToken && pathname.startsWith('/signin')) {
     // Redirect to the dashboard
     return NextResponse.redirect(new URL('/', request.url))
   }
