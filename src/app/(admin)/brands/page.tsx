@@ -17,6 +17,7 @@ import {
   PlusIcon,
   PencilIcon,
   TrashBinIcon,
+  Search
 } from "@/icons";
 import Label from "@/components/form/Label";
 
@@ -70,7 +71,17 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch brands");
+        let errorMessage = "Failed to fetch brands.";
+        if (response.status === 401 || response.status === 403) {
+          errorMessage = "You are not authorized to view brands. Please sign in again.";
+        } else if (response.status === 404) {
+          errorMessage = "The brands resource could not be found.";
+        } else if (response.status >= 500) {
+          errorMessage = "A server error occurred while fetching brands. Please try again later.";
+        } else if (response.status >= 400) {
+          errorMessage = "A request error occurred while fetching brands. Please check your input and try again.";
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -117,8 +128,20 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to create brand");
+        let errorMessage = "Failed to create brand.";
+        if (response.status === 400) {
+          const errorData = await response.json();
+          errorMessage = errorData.errors[0].msg || "Invalid brand data provided.";
+        }else if (response.status === 401 || response.status === 403) {
+          errorMessage = "You are not authorized to create brands. Please sign in again.";
+        } else if (response.status === 404) {
+          errorMessage = "The brands resource could not be found.";
+        } else if (response.status >= 500) {
+          errorMessage = "A server error occurred while creating the brand. Please try again later.";
+        } else if (response.status >= 400) {
+          errorMessage = "A request error occurred while creating the brand. Please check your input and try again.";
+        }
+        throw new Error(errorMessage);
       }
 
       await fetchBrands();
@@ -160,8 +183,17 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to update brand");
+        let errorMessage = "Failed to update brand.";
+        if (response.status === 401 || response.status === 403) {
+          errorMessage = "You are not authorized to update brands. Please sign in again.";
+        } else if (response.status === 404) {
+          errorMessage = "The brand resource could not be found.";
+        } else if (response.status >= 500) {
+          errorMessage = "A server error occurred while updating the brand. Please try again later.";
+        } else if (response.status >= 400) {
+          errorMessage = "A request error occurred while updating the brand. Please check your input and try again.";
+        }
+        throw new Error(errorMessage);
       }
 
       await fetchBrands();
@@ -194,8 +226,17 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to delete brand");
+        let errorMessage = "Failed to delete brand.";
+        if (response.status === 401 || response.status === 403) {
+          errorMessage = "You are not authorized to delete brands. Please sign in again.";
+        } else if (response.status === 404) {
+          errorMessage = "The brand resource could not be found.";
+        } else if (response.status >= 500) {
+          errorMessage = "A server error occurred while deleting the brand. Please try again later.";
+        } else if (response.status >= 400) {
+          errorMessage = "A request error occurred while deleting the brand. Please check your input and try again.";
+        }
+        throw new Error(errorMessage);
       }
 
       await fetchBrands();
@@ -203,7 +244,7 @@ export default function BrandsPage() {
       showSuccess("Brand deleted successfully");
       setSelectedBrand(null);
     } catch (err: any) {
-      alert(err.message); // Simple alert for delete error
+      setFormError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -216,9 +257,7 @@ export default function BrandsPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72 relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M3.04199 9.25C3.04199 5.82157 5.82157 3.04199 9.25 3.04199C12.6784 3.04199 15.458 5.82157 15.458 9.25C15.458 12.6784 12.6784 15.458 9.25 15.458C5.82157 15.458 3.04199 12.6784 3.04199 9.25ZM9.25 1.54199C4.99313 1.54199 1.54199 4.99313 1.54199 9.25C1.54199 13.5069 4.99313 16.958 9.25 16.958C11.0848 16.958 12.7711 16.3166 14.0996 15.2455L17.3223 18.4682C17.6152 18.7611 18.0901 18.7611 18.383 18.4682C18.6759 18.1753 18.6759 17.7004 18.383 17.4075L15.1898 14.2143C16.4203 12.8104 17.166 10.9869 17.166 9.00001C17.166 4.74316 13.7149 1.29202 9.45801 1.29202H9.25V1.54199Z" fill="currentColor"/>
-                </svg>
+                <Search className="h-5 w-5" />
             </div>
           <Input
             type="text"
@@ -228,9 +267,10 @@ export default function BrandsPage() {
             className="w-full pl-11"
           />
         </div>
-        <Button onClick={openAddModal} startIcon={<PlusIcon />}>
+        <Button aria-label="Add Brand" onClick={openAddModal} startIcon={<PlusIcon />}>
           Add Brand
         </Button>
+</div>
       {successMessage && (
         <div className="mb-4 rounded-lg bg-success-50 p-4 text-sm text-success-800 dark:bg-success-900/30 dark:text-success-400">
           {successMessage}
@@ -242,7 +282,6 @@ export default function BrandsPage() {
           {error}
         </div>
       )}
-</div>
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-gray-800">
@@ -282,12 +321,16 @@ export default function BrandsPage() {
                   <TableCell className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
+                        title="Edit Brand"
+                        aria-label="Edit Brand"
                         onClick={() => openEditModal(brand)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
+                        title="Delete Brand"
+                        aria-label="Delete Brand"
                         onClick={() => openDeleteModal(brand)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-error-500 hover:bg-error-50 hover:text-error-600 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
                       >
