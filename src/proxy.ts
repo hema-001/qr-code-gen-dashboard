@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import createMiddleware from 'next-intl/middleware';
+import {routing} from './i18n/routing';
 
-export async function proxy(request: NextRequest) {
+const intlMiddleware = createMiddleware(routing);
+
+export default async function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
   // Define public paths that don't require authentication
   const publicPaths = ['/signin', '/error-404']
+  const locales = ['ar', 'en', 'zh'];
   
   // Check if the path is public
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+  const isPublicPath = publicPaths.some(path => 
+    pathname.startsWith(path) || 
+    locales.some(locale => pathname.startsWith(`/${locale}${path}`))
+  )
 
   let isValidToken = false
   if (token) {
@@ -39,7 +47,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  return NextResponse.next()
+  return intlMiddleware(request);
 }
 
 export const config = {
