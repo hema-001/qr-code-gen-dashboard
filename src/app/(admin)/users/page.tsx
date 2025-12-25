@@ -67,7 +67,7 @@ export default function UsersPage() {
         fetchUsers();
         fetchBrands();
     }
-  }, [token, brands.length]);
+  }, [token]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -159,7 +159,7 @@ export default function UsersPage() {
       setFormError("Username is required");
       return;
     }
-    if (!password) {
+    if (!password.trim()) {
       setFormError("Password is required");
       return;
     }
@@ -311,6 +311,9 @@ export default function UsersPage() {
       setSelectedUser(null);
     } catch (err: any) {
       setFormError(err.message);
+      if (typeof window !== "undefined") {
+        window.alert(err?.message || "An error occurred while deleting the user");
+      }
     } finally {
       setIsSubmitting(false);
     }
