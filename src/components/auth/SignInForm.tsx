@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import * as yup from "yup";
+import LanguageSelector from "@/components/header/LanguageSelector";
 
 const schema = yup.object().shape({
   username: yup.string().required("Username is required"),
@@ -78,6 +79,9 @@ export default function SignInForm() {
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+      <div className="flex justify-end p-5">
+        <LanguageSelector />
+      </div>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">

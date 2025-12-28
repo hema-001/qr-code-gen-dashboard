@@ -6,11 +6,21 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
-export default function AuthLayout({
-  children,
-}: {
+import {hasLocale} from 'next-intl';
+import {notFound} from 'next/navigation';
+import {routing} from '@/i18n/routing';
+
+type Props = {
   children: React.ReactNode;
-}) {
+  params: Promise<{locale: string}>;
+};
+
+export default async function LocaleLayout({children, params}: Props) {
+  // Ensure that the incoming `locale` is valid
+  const {locale} = await params;
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
   return (
     <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
       <ThemeProvider>
@@ -25,7 +35,7 @@ export default function AuthLayout({
                   <Image
                     width={231}
                     height={48}
-                    src="./images/logo/auth-logo.svg"
+                    src="/images/logo/auth-logo.svg"
                     alt="Logo"
                   />
                 </Link>
