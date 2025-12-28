@@ -9,7 +9,6 @@ import React from "react";
 import {hasLocale} from 'next-intl';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
-import AdminLayout from '@/layout/AdminLayout';
 
 type Props = {
   children: React.ReactNode;
