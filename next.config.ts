@@ -3,7 +3,30 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  allowedDevOrigins: ["http://localhost:3001", "http://198.18.0.1:3001"],
+  images: {
+    dangerouslyAllowLocalIP: true,
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3001",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "192.168.2.100",
+        port: "3000",
+        pathname: "/**",
+      },
+    ],
+  },
+  allowedDevOrigins: ["localhost:3001", "198.18.0.1:3001", "169.254.230.107:3001"],
   async rewrites() {
     return [
       {
