@@ -36,7 +36,7 @@ import EyeIcon from "./eye.svg";
 import EyeCloseIcon from "./eye-close.svg";
 import TimeIcon from "./time.svg";
 import CopyIcon from "./copy.svg";
-import ChevronLeftIcon from "./chevron-left.svg";
+import ChevronLeftIcon from "./chevron-left-svgrepo-com.svg";
 import UserCircleIcon from "./user-circle.svg";
 import TaskIcon from "./task-icon.svg";
 import ListIcon from "./list.svg";
@@ -52,6 +52,9 @@ import ChatIcon from "./chat.svg";
 import MoreDotIcon from "./more-dot.svg";
 import BellIcon from "./bell.svg";
 import Search from "./search.svg";
+import ChevronRightIcon from "./chevron-right-svgrepo-com.svg";
+import ChevronsLeftIcon from "./chevrons-left-alt-svgrepo-com.svg";
+import ChevronsRightIcon from "./chevrons-right-svgrepo-com.svg";
 
 export {
   DownloadIcon,
@@ -108,4 +111,7 @@ export {
   ChevronUpIcon,
   ChatIcon,
   Search,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon
 };
