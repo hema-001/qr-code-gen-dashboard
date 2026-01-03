@@ -78,6 +78,7 @@ export default function ProductsPage() {
   const [category, setCategory] = useState("");
   const [flavor, setFlavor] = useState("");
   const [mg, setMg] = useState("");
+  const [codeType, setCodeType] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,6 +162,7 @@ export default function ProductsPage() {
     setCategory("");
     setFlavor("");
     setMg("");
+    setCodeType("");
     setImageFile(null);
     setFormError(null);
   };
@@ -185,9 +187,9 @@ export default function ProductsPage() {
       formData.append("brand_id", brandId);
       formData.append("model_name", modelName);
       formData.append("category", category);
-      
       formData.append("attributes[flavor]", flavor);
       formData.append("attributes[mg]", mg);
+      formData.append("attributes[code_type]", codeType);
 
       if (imageFile) {
         formData.append("image", imageFile);
@@ -225,6 +227,7 @@ export default function ProductsPage() {
     setCategory(product.category);
     setFlavor(product.attributes?.flavor || "");
     setMg(product.attributes?.mg || "");
+    setCodeType(product.attributes?.code_type || "");
     setImageFile(null);
     setFormError(null);
     setIsEditModalOpen(true);
@@ -248,6 +251,7 @@ export default function ProductsPage() {
       
       formData.append("attributes[flavor]", flavor);
       formData.append("attributes[mg]", mg);
+      formData.append("attributes[code_type]", codeType);
 
       if (imageFile) {
         formData.append("image", imageFile);
@@ -395,6 +399,9 @@ export default function ProductsPage() {
               <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 MG
                 </TableCell>
+                <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                Code Type
+                </TableCell>
               <TableCell isHeader className="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
                 Actions
               </TableCell>
@@ -449,6 +456,9 @@ export default function ProductsPage() {
                   </TableCell>
                     <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
                     {product.attributes?.mg || "-"}
+                  </TableCell>
+                    <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
+                    {product.attributes?.code_type || "-"}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -597,6 +607,19 @@ export default function ProductsPage() {
                 onChange={(e) => setMg(e.target.value)}
               />
             </div>
+            <div>
+              <Label htmlFor="codeType">Code Type</Label>
+              <Select
+                options={[
+                  { value: "box", label: "Box" },
+                  { value: "sticker", label: "Sticker" },
+                  { value: "cap", label: "Cap" },
+                ]}
+                placeholder="Select Code Type"
+                onChange={(value) => setCodeType(value)}
+                defaultValue={codeType}
+              />
+            </div>
           </div>
           
           {formError && (
@@ -682,6 +705,19 @@ export default function ProductsPage() {
                 placeholder="Enter MG"
                 value={mg}
                 onChange={(e) => setMg(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editCodeType">Code Type</Label>
+              <Select
+                options={[
+                  { value: "box", label: "Box" },
+                  { value: "sticker", label: "Sticker" },
+                  { value: "cap", label: "Cap" },
+                ]}
+                placeholder="Select Code Type"
+                onChange={(value) => setCodeType(value)}
+                defaultValue={codeType}
               />
             </div>
           </div>
