@@ -80,6 +80,7 @@ interface ApiBatch {
   total_codes: string;
   created_at: string;
   status: string;
+  download_url?: string;
   progress: {
     percent: number;
     status: string;
@@ -199,8 +200,8 @@ export default function CodeGeneratorPage() {
   const [selectedBatchDetails, setSelectedBatchDetails] = useState<ApiBatch | null>(null);
   const [loadingBatchDetails, setLoadingBatchDetails] = useState(false);
 
-  // Download Modal (info)
-  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  // Download state
+  const [downloadingBatchId, setDownloadingBatchId] = useState<number | null>(null);
 
   // Delete Confirmation Modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -403,6 +404,54 @@ export default function CodeGeneratorPage() {
     }
   };
 
+  const handleDownload = async (batch: ApiBatch) => {
+    if (!batch.download_url) {
+      setError("Download URL not available");
+      return;
+    }
+
+    setDownloadingBatchId(batch.id);
+    try {
+      const response = await fetch(batch.download_url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download file");
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `${batch.batch_name}.zip`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=(['"]?)([^'"\n]*?)\1(;|$)/i);
+        if (filenameMatch && filenameMatch[2]) {
+          filename = filenameMatch[2];
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSuccessMessage(`Download started for ${batch.batch_name}`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err.message || "Failed to download batch");
+    } finally {
+      setDownloadingBatchId(null);
+    }
+  };
+
   const fetchBatchDetails = async (batchId: number) => {
     setLoadingBatchDetails(true);
     setIsDetailsModalOpen(true);
@@ -566,7 +615,7 @@ export default function CodeGeneratorPage() {
   // Product options for dropdown
   const productOptions = products.map((p) => ({
     value: p.id.toString(),
-    label: `${getBrandName(p)} - ${p.model_name} (${p.attributes?.flavor || "N/A"})`,
+    label: `${getBrandName(p)} - (${p.attributes?.flavor || "N/A"} - ${p.attributes?.mg || "N/A"}MG - ${p.attributes?.code_type || "N/A"})`,
   }));
 
   // Get status badge color
@@ -712,6 +761,12 @@ export default function CodeGeneratorPage() {
                           isHeader
                           className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
+                          Code Type
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        >
                           Quantity
                         </TableCell>
                         <TableCell
@@ -748,6 +803,9 @@ export default function CodeGeneratorPage() {
                           </TableCell>
                           <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                             {item.product?.attributes?.mg || "-"}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                            {item.product?.attributes?.code_type || "-"}
                           </TableCell>
                           <TableCell className="px-4 py-3">
                             <Input
@@ -1149,14 +1207,24 @@ export default function CodeGeneratorPage() {
                             >
                               <EyeIcon className="h-4 w-4" />
                             </Button>
-                            {batch.status === "completed" && (
+                            {batch.status === "completed" && batch.download_url && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setIsDownloadModalOpen(true)}
-                                startIcon={<DownloadIcon className="h-4 w-4" />}
+                                onClick={() => handleDownload(batch)}
+                                disabled={downloadingBatchId === batch.id}
+                                startIcon={
+                                  downloadingBatchId === batch.id ? (
+                                    <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  ) : (
+                                    <DownloadIcon className="h-4 w-4" />
+                                  )
+                                }
                               >
-                                Download
+                                {downloadingBatchId === batch.id ? "Downloading..." : "Download"}
                               </Button>
                             )}
                             {batch.status === "failed" && (
@@ -1344,12 +1412,12 @@ export default function CodeGeneratorPage() {
 
             {/* Modal Actions */}
             <div className="mt-6 flex justify-end gap-3">
-              {selectedBatchDetails.status === "completed" && (
+              {selectedBatchDetails.status === "completed" && selectedBatchDetails.download_url && (
                 <Button
                   variant="primary"
                   onClick={() => {
+                    handleDownload(selectedBatchDetails);
                     closeDetailsModal();
-                    setIsDownloadModalOpen(true);
                   }}
                   startIcon={<DownloadIcon className="h-4 w-4" />}
                 >
@@ -1362,32 +1430,6 @@ export default function CodeGeneratorPage() {
             </div>
           </div>
         ) : null}
-      </Modal>
-
-      {/* Download Info Modal */}
-      <Modal
-        isOpen={isDownloadModalOpen}
-        onClose={() => setIsDownloadModalOpen(false)}
-        className="max-w-md p-6 sm:p-8"
-      >
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
-            <DownloadIcon className="h-8 w-8 text-brand-500" />
-          </div>
-          <h3 className="mb-2 text-xl font-semibold text-gray-800 dark:text-white">
-            Coming Soon
-          </h3>
-          <p className="mb-6 text-gray-500 dark:text-gray-400">
-            Download functionality is coming soon! You will be able to download your generated QR codes once this feature is implemented.
-          </p>
-          <Button
-            variant="primary"
-            onClick={() => setIsDownloadModalOpen(false)}
-            className="w-full"
-          >
-            Got it
-          </Button>
-        </div>
       </Modal>
 
       {/* Delete Confirmation Modal */}
