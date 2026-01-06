@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 
@@ -21,22 +22,23 @@ const QRCodeDistribution: React.FC<QRCodeDistributionProps> = ({
   data,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
   const labels: string[] = [];
   const seriesData: number[] = [];
   const colors: string[] = [];
 
   if (data.active > 0) {
-    labels.push("Active");
+    labels.push(t("active"));
     seriesData.push(data.active);
     colors.push("#10B981");
   }
   if (data.used > 0) {
-    labels.push("Used");
+    labels.push(t("used"));
     seriesData.push(data.used);
     colors.push("#465fff");
   }
   if (data.inactive && data.inactive > 0) {
-    labels.push("Inactive");
+    labels.push(t("inactive"));
     seriesData.push(data.inactive);
     colors.push("#6B7280");
   }
@@ -64,7 +66,7 @@ const QRCodeDistribution: React.FC<QRCodeDistributionProps> = ({
     tooltip: {
       theme: "dark",
       y: {
-        formatter: (value: number) => `${value.toLocaleString()} codes`,
+        formatter: (value: number) => `${value.toLocaleString()} ${t("codes")}`,
       },
     },
     responsive: [
@@ -113,7 +115,7 @@ const QRCodeDistribution: React.FC<QRCodeDistributionProps> = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          No QR code data available
+          {t("noDataAvailable")}
         </p>
       </div>
     );

@@ -2,6 +2,13 @@
   "Main": {
     "title": "主页"
   },
+  "Sidebar": {
+    "menu": "菜单",
+    "brands": "品牌",
+    "products": "产品",
+    "codeGenerator": "代码生成器",
+    "users": "用户"
+  },
   "Dashboard": {
     "title": "仪表盘概览",
     "totalQRCodes": "二维码总数",
@@ -45,6 +52,8 @@
     "averageBatchSize": "平均批次大小",
     "codes": "个代码",
     "scans": "次扫描",
+    "codesGenerated": "生成的代码",
+    "batchesCreated": "创建的批次",
     "justNow": "刚刚",
     "minutesAgo": "分钟前",
     "hoursAgo": "小时前"

@@ -2,6 +2,13 @@
   "Main": {
     "title": "Main Page"
   },
+  "Sidebar": {
+    "menu": "Menu",
+    "brands": "Brands",
+    "products": "Products",
+    "codeGenerator": "Code Generator",
+    "users": "Users"
+  },
   "Dashboard": {
     "title": "Dashboard Overview",
     "totalQRCodes": "Total QR Codes",
@@ -45,6 +52,8 @@
     "averageBatchSize": "Average Batch Size",
     "codes": "codes",
     "scans": "scans",
+    "codesGenerated": "Codes Generated",
+    "batchesCreated": "Batches Created",
     "justNow": "Just now",
     "minutesAgo": "m ago",
     "hoursAgo": "h ago"

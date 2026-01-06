@@ -2,6 +2,13 @@
   "Main": {
     "title": "الصفحة الرئيسية"
   },
+  "Sidebar": {
+    "menu": "القائمة",
+    "brands": "العلامات التجارية",
+    "products": "المنتجات",
+    "codeGenerator": "مولد الرموز",
+    "users": "المستخدمين"
+  },
   "Dashboard": {
     "title": "نظرة عامة على لوحة التحكم",
     "totalQRCodes": "إجمالي رموز QR",
@@ -45,6 +52,8 @@
     "averageBatchSize": "متوسط حجم الدفعة",
     "codes": "رموز",
     "scans": "عمليات مسح",
+    "codesGenerated": "الرموز المُنشأة",
+    "batchesCreated": "الدفعات المُنشأة",
     "justNow": "الآن",
     "minutesAgo": "د مضت",
     "hoursAgo": "س مضت"

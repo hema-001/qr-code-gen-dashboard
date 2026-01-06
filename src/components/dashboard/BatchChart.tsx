@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 
@@ -28,6 +29,8 @@ const BatchChart: React.FC<BatchChartProps> = ({
   averageBatchSize,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
+
   // Group batches by date and sum counts
   const batchesByDate = batchesOverTime.reduce(
     (acc, item) => {
@@ -95,7 +98,7 @@ const BatchChart: React.FC<BatchChartProps> = ({
     yaxis: [
       {
         title: {
-          text: "Codes Generated",
+          text: t("codesGenerated"),
           style: {
             color: "#465fff",
             fontSize: "12px",
@@ -112,7 +115,7 @@ const BatchChart: React.FC<BatchChartProps> = ({
       {
         opposite: true,
         title: {
-          text: "Batches Created",
+          text: t("batchesCreated"),
           style: {
             color: "#10B981",
             fontSize: "12px",
@@ -148,11 +151,11 @@ const BatchChart: React.FC<BatchChartProps> = ({
 
   const series = [
     {
-      name: "Codes Generated",
+      name: t("codesGenerated"),
       data: codesData,
     },
     {
-      name: "Batches Created",
+      name: t("batchesCreated"),
       data: batchesData,
     },
   ];
@@ -182,7 +185,7 @@ const BatchChart: React.FC<BatchChartProps> = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          No batch data available for this period
+          {t("noDataAvailable")}
         </p>
       </div>
     );
@@ -192,9 +195,9 @@ const BatchChart: React.FC<BatchChartProps> = ({
     <div className="w-full">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          Average Batch Size:{" "}
+          {t("averageBatchSize")}:{" "}
           <span className="font-medium text-gray-800 dark:text-white">
-            {averageBatchSize.toLocaleString()} codes
+            {averageBatchSize.toLocaleString()} {t("codes")}
           </span>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 
@@ -22,6 +23,8 @@ const ScanChart: React.FC<ScanChartProps> = ({
   period,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
+
   const categories = data.map((item) => {
     const date = new Date(item.date);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -97,7 +100,7 @@ const ScanChart: React.FC<ScanChartProps> = ({
         show: true,
       },
       y: {
-        formatter: (value: number) => `${value} scans`,
+        formatter: (value: number) => `${value} ${t("scans")}`,
       },
     },
     legend: {
@@ -107,7 +110,7 @@ const ScanChart: React.FC<ScanChartProps> = ({
 
   const series = [
     {
-      name: "Scans",
+      name: t("scans"),
       data: seriesData,
     },
   ];
@@ -137,7 +140,7 @@ const ScanChart: React.FC<ScanChartProps> = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          No scan data available for this period
+          {t("noDataAvailable")}
         </p>
       </div>
     );
