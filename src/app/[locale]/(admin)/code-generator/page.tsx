@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
@@ -156,14 +157,15 @@ const StepIndicator: React.FC<{
 };
 
 export default function CodeGeneratorPage() {
+  const t = useTranslations("CodeGenerator");
   const { token } = useAuth();
   
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
   const steps = [
-    { number: 1, title: "Batch Info" },
-    { number: 2, title: "Batch Details" },
-    { number: 3, title: "Review & Generate" },
+    { number: 1, title: t("stepBatchInfo") },
+    { number: 2, title: t("stepBatchDetails") },
+    { number: 3, title: t("stepReviewGenerate") },
   ];
 
   // Step 1: Batch Info
@@ -354,11 +356,11 @@ export default function CodeGeneratorPage() {
       }
 
       closeDeleteModal();
-      setSuccessMessage("Batch deleted successfully");
+      setSuccessMessage(t("batchDeletedSuccess"));
       setTimeout(() => setSuccessMessage(null), 3000);
       fetchBatches();
     } catch (err: any) {
-      setError(err.message || "Failed to delete batch");
+      setError(err.message || t("failedToDeleteBatch"));
     } finally {
       setDeletingBatchId(null);
     }
@@ -376,7 +378,7 @@ export default function CodeGeneratorPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to retry batch");
+        throw new Error(t("failedToRetryBatch"));
       }
 
       const data = await response.json();
@@ -394,11 +396,11 @@ export default function CodeGeneratorPage() {
       };
       setActiveBatchJob(newJob);
 
-      setSuccessMessage("Batch retry initiated successfully");
+      setSuccessMessage(t("batchRetrySuccess"));
       setTimeout(() => setSuccessMessage(null), 3000);
       fetchBatches();
     } catch (err: any) {
-      setError(err.message || "Failed to retry batch");
+      setError(err.message || t("failedToRetryBatch"));
     } finally {
       setRetryingBatchId(null);
     }
@@ -406,7 +408,7 @@ export default function CodeGeneratorPage() {
 
   const handleDownload = async (batch: ApiBatch) => {
     if (!batch.download_url) {
-      setError("Download URL not available");
+      setError(t("downloadUrlNotAvailable"));
       return;
     }
 
@@ -419,7 +421,7 @@ export default function CodeGeneratorPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to download file");
+        throw new Error(t("failedToDownload"));
       }
 
       // Get filename from Content-Disposition header or use default
@@ -443,10 +445,10 @@ export default function CodeGeneratorPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      setSuccessMessage(`Download started for ${batch.batch_name}`);
+      setSuccessMessage(t("downloadStarted", { batchName: batch.batch_name }));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
-      setError(err.message || "Failed to download batch");
+      setError(err.message || t("failedToDownload"));
     } finally {
       setDownloadingBatchId(null);
     }
@@ -466,10 +468,10 @@ export default function CodeGeneratorPage() {
         const data = await response.json();
         setSelectedBatchDetails(data);
       } else {
-        throw new Error("Failed to fetch batch details");
+        throw new Error(t("failedToFetchBatchDetails"));
       }
     } catch (err: any) {
-      setError(err.message || "Failed to fetch batch details");
+      setError(err.message || t("failedToFetchBatchDetails"));
       setIsDetailsModalOpen(false);
     } finally {
       setLoadingBatchDetails(false);
@@ -569,7 +571,7 @@ export default function CodeGeneratorPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate batch");
+        throw new Error(errorData.message || t("failedToGenerateBatch"));
       }
 
       const data = await response.json();
@@ -592,10 +594,10 @@ export default function CodeGeneratorPage() {
       setDescription("");
       setBatchItems([]);
       setCurrentStep(1);
-      setSuccessMessage(`Batch generation job queued successfully! Job ID: ${data.jobId}`);
+      setSuccessMessage(t("batchQueuedSuccess", { jobId: data.jobId }));
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      setError(err.message || "An error occurred while generating the batch");
+      setError(err.message || t("failedToGenerateBatch"));
     } finally {
       setIsSubmitting(false);
     }
@@ -609,7 +611,7 @@ export default function CodeGeneratorPage() {
 
   // Helper function to get brand name
   const getBrandName = (product: Product) => {
-    return product.Brand?.name || brandsMap[product.brand_id] || "Unknown Brand";
+    return product.Brand?.name || brandsMap[product.brand_id] || t("unknownBrand");
   };
 
   // Product options for dropdown
@@ -654,7 +656,7 @@ export default function CodeGeneratorPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageBreadcrumb pageTitle="Code Generator" />
+      <PageBreadcrumb pageTitle={t("title")} />
 
       {/* Success Message */}
       {successMessage && (
@@ -674,10 +676,10 @@ export default function CodeGeneratorPage() {
       <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Generate QR Code Batch
+            {t("generateQRCodeBatch")}
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Create a new batch of QR codes for your products
+            {t("createBatchDescription")}
           </p>
         </div>
 
@@ -690,20 +692,20 @@ export default function CodeGeneratorPage() {
             <div className="mx-auto max-w-xl space-y-6">
               <div>
                 <Label htmlFor="batchName">
-                  Batch Name <span className="text-error-500">*</span>
+                  {t("batchName")} <span className="text-error-500">*</span>
                 </Label>
                 <Input
                   id="batchName"
                   type="text"
-                  placeholder="Enter batch name"
+                  placeholder={t("enterBatchName")}
                   value={batchName}
                   onChange={(e) => setBatchName(e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description">{t("descriptionOptional")}</Label>
                 <TextArea
-                  placeholder="Enter batch description..."
+                  placeholder={t("enterBatchDescription")}
                   rows={4}
                   value={description}
                   onChange={(value) => setDescription(value)}
@@ -717,21 +719,21 @@ export default function CodeGeneratorPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Add products and specify quantities for your QR code batch
+                  {t("addProductsDescription")}
                 </p>
                 <Button
                   onClick={addBatchItem}
                   startIcon={<PlusIcon />}
                   size="sm"
                 >
-                  Add Item
+                  {t("addItem")}
                 </Button>
               </div>
 
               {batchItems.length === 0 ? (
                 <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
                   <p className="text-gray-500 dark:text-gray-400">
-                    No items added yet. Click &quot;Add Item&quot; to add products to the batch.
+                    {t("noItemsAdded")}
                   </p>
                 </div>
               ) : (
@@ -741,39 +743,39 @@ export default function CodeGeneratorPage() {
                       <TableRow>
                         <TableCell
                           isHeader
-                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          Product
+                          {t("product")}
                         </TableCell>
                         <TableCell
                           isHeader
-                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          Flavor
+                          {t("flavor")}
                         </TableCell>
                         <TableCell
                           isHeader
-                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          MG
+                          {t("mg")}
                         </TableCell>
                         <TableCell
                           isHeader
-                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          Code Type
+                          {t("codeType")}
                         </TableCell>
                         <TableCell
                           isHeader
-                          className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          Quantity
+                          {t("quantity")}
                         </TableCell>
                         <TableCell
                           isHeader
                           className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                          Actions
+                          {t("actions")}
                         </TableCell>
                       </TableRow>
                     </TableHeader>
@@ -786,7 +788,7 @@ export default function CodeGeneratorPage() {
                           <TableCell className="px-4 py-3">
                             <Select
                               options={productOptions}
-                              placeholder="Select Product"
+                              placeholder={t("selectProduct")}
                               onChange={(value) =>
                                 updateBatchItem(item.id, "product_id", value)
                               }
@@ -840,10 +842,10 @@ export default function CodeGeneratorPage() {
               )}
 
               {batchItems.length > 0 && (
-                <div className="flex justify-end">
+                <div className="flex justify-end rtl:justify-start">
                   <div className="rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-800">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Total QR Codes:{" "}
+                      {t("totalQRCodes")}:{" "}
                     </span>
                     <span className="font-semibold text-gray-800 dark:text-white">
                       {getTotalCodes().toLocaleString()}
@@ -859,26 +861,26 @@ export default function CodeGeneratorPage() {
             <div className="mx-auto max-w-2xl space-y-6">
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800">
                 <h4 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
-                  Batch Summary
+                  {t("batchSummary")}
                 </h4>
                 
                 <div className="space-y-3">
                   <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
-                    <span className="text-gray-600 dark:text-gray-400">Batch Name:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t("batchName")}:</span>
                     <span className="font-medium text-gray-800 dark:text-white">{batchName}</span>
                   </div>
                   {description && (
                     <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
-                      <span className="text-gray-600 dark:text-gray-400">Description:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t("description")}:</span>
                       <span className="font-medium text-gray-800 dark:text-white">{description}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
-                    <span className="text-gray-600 dark:text-gray-400">Total Products:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t("totalProducts")}:</span>
                     <span className="font-medium text-gray-800 dark:text-white">{batchItems.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Total QR Codes:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t("totalQRCodes")}:</span>
                     <span className="font-semibold text-brand-500">{getTotalCodes().toLocaleString()}</span>
                   </div>
                 </div>
@@ -886,7 +888,7 @@ export default function CodeGeneratorPage() {
 
               <div className="rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-                  <h5 className="font-medium text-gray-800 dark:text-white">Products in Batch</h5>
+                  <h5 className="font-medium text-gray-800 dark:text-white">{t("productsInBatch")}</h5>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   {batchItems.map((item, index) => (
@@ -900,15 +902,15 @@ export default function CodeGeneratorPage() {
                         </span>
                         <div>
                           <p className="font-medium text-gray-800 dark:text-white">
-                            {item.product ? getBrandName(item.product) : "Unknown Brand"} - {item.product?.model_name}
+                            {item.product ? getBrandName(item.product) : t("unknownBrand")} - {item.product?.model_name}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Flavor: {item.product?.attributes?.flavor || "N/A"} | MG: {item.product?.attributes?.mg || "N/A"}
+                            {t("flavor")}: {item.product?.attributes?.flavor || "N/A"} | {t("mg")}: {item.product?.attributes?.mg || "N/A"}
                           </p>
                         </div>
                       </div>
                       <Badge color="primary" variant="light">
-                        {item.quantity.toLocaleString()} codes
+                        {item.quantity.toLocaleString()} {t("codes")}
                       </Badge>
                     </div>
                   ))}
@@ -917,8 +919,7 @@ export default function CodeGeneratorPage() {
 
               <div className="rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20">
                 <p className="text-sm text-warning-800 dark:text-warning-400">
-                  <strong>Note:</strong> Once you proceed with the generation, this batch will be queued for processing. 
-                  You can track the progress in the Batch Status section below.
+                  <strong>{t("note")}:</strong> {t("generateNote")}
                 </p>
               </div>
             </div>
@@ -931,9 +932,9 @@ export default function CodeGeneratorPage() {
                 <Button
                   variant="outline"
                   onClick={goToPreviousStep}
-                  startIcon={<ChevronLeftIcon className="h-4 w-4" />}
+                  startIcon={<ChevronLeftIcon className="h-4 w-4 rtl:rotate-180" />}
                 >
-                  Previous
+                  {t("previous")}
                 </Button>
               )}
             </div>
@@ -945,9 +946,9 @@ export default function CodeGeneratorPage() {
                     (currentStep === 1 && !isStep1Valid) ||
                     (currentStep === 2 && !isStep2Valid)
                   }
-                  endIcon={<ChevronRightIcon className="h-4 w-4" />}
+                  endIcon={<ChevronRightIcon className="h-4 w-4 rtl:rotate-180" />}
                 >
-                  Next
+                  {t("next")}
                 </Button>
               )}
               {currentStep === 3 && (
@@ -955,7 +956,7 @@ export default function CodeGeneratorPage() {
                   onClick={handleGenerateBatch}
                   disabled={isSubmitting || !isStep1Valid || !isStep2Valid}
                 >
-                  {isSubmitting ? "Generating..." : "Generate Batch"}
+                  {isSubmitting ? t("generating") : t("generateBatch")}
                 </Button>
               )}
             </div>
@@ -976,10 +977,10 @@ export default function CodeGeneratorPage() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                  Batch Generation In Progress
+                  {t("batchGenerationInProgress")}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {activeBatchJob.batchName} - Job ID: {activeBatchJob.jobId}
+                  {activeBatchJob.batchName} - {t("jobId")}: {activeBatchJob.jobId}
                 </p>
               </div>
             </div>
@@ -989,7 +990,7 @@ export default function CodeGeneratorPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {activeBatchJob.status === "pending" ? "Queued for processing..." : "Generating QR codes..."}
+                  {activeBatchJob.status === "pending" ? t("queuedForProcessing") : t("generatingQRCodes")}
                 </span>
                 <Badge color={getStatusColor(activeBatchJob.status)} variant="light">
                   {activeBatchJob.status.charAt(0).toUpperCase() + activeBatchJob.status.slice(1)}
@@ -1005,7 +1006,7 @@ export default function CodeGeneratorPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">
-                    {activeBatchJob.processedCodes.toLocaleString()} / {activeBatchJob.totalCodes.toLocaleString()} codes
+                    {activeBatchJob.processedCodes.toLocaleString()} / {activeBatchJob.totalCodes.toLocaleString()} {t("codesProcessed")}
                   </span>
                   <span className="font-semibold text-brand-500">
                     {activeBatchJob.progress}%
@@ -1038,11 +1039,11 @@ export default function CodeGeneratorPage() {
                   activeBatchJob.status === "completed" ? "text-success-800 dark:text-success-400" : "text-error-800 dark:text-error-400"
                 }`}>
                   {activeBatchJob.status === "completed" 
-                    ? `Batch "${activeBatchJob.batchName}" completed successfully!` 
-                    : `Batch "${activeBatchJob.batchName}" failed: ${activeBatchJob.error || "Unknown error"}`}
+                    ? t("batchCompletedSuccess", { batchName: activeBatchJob.batchName })
+                    : t("batchFailed", { batchName: activeBatchJob.batchName, error: activeBatchJob.error || t("unknownError") })}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {activeBatchJob.totalCodes.toLocaleString()} codes processed
+                  {activeBatchJob.totalCodes.toLocaleString()} {t("codesProcessed")}
                 </p>
               </div>
             </div>
@@ -1051,7 +1052,7 @@ export default function CodeGeneratorPage() {
               size="sm"
               onClick={() => setActiveBatchJob(null)}
             >
-              Dismiss
+              {t("dismiss")}
             </Button>
           </div>
         </div>
@@ -1063,10 +1064,10 @@ export default function CodeGeneratorPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Batch History
+                {t("batchHistory")}
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                All generated batches and their status
+                {t("batchHistoryDescription")}
               </p>
             </div>
             <Button
@@ -1075,7 +1076,7 @@ export default function CodeGeneratorPage() {
               onClick={() => fetchBatches()}
               disabled={loadingBatches}
             >
-              {loadingBatches ? "Refreshing..." : "Refresh"}
+              {loadingBatches ? t("refreshing") : t("refresh")}
             </Button>
           </div>
         </div>
@@ -1091,7 +1092,7 @@ export default function CodeGeneratorPage() {
           ) : batches.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
               <p className="text-gray-500 dark:text-gray-400">
-                No batches found. Generate a batch to see it here.
+                {t("noBatchesFound")}
               </p>
             </div>
           ) : (
@@ -1102,45 +1103,45 @@ export default function CodeGeneratorPage() {
                     <TableRow>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Batch Name
+                        {t("batchName")}
                       </TableCell>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Job ID
+                        {t("jobId")}
                       </TableCell>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Total Codes
+                        {t("totalCodes")}
                       </TableCell>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Status
+                        {t("status")}
                       </TableCell>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Progress
+                        {t("progress")}
                       </TableCell>
                       <TableCell
                         isHeader
-                        className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400"
+                        className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Created At
+                        {t("createdAt")}
                       </TableCell>
                       <TableCell
                         isHeader
                         className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
                       >
-                        Actions
+                        {t("actions")}
                       </TableCell>
                     </TableRow>
                   </TableHeader>
@@ -1224,7 +1225,7 @@ export default function CodeGeneratorPage() {
                                   )
                                 }
                               >
-                                {downloadingBatchId === batch.id ? "Downloading..." : "Download"}
+                                {downloadingBatchId === batch.id ? t("downloading") : t("download")}
                               </Button>
                             )}
                             {batch.status === "failed" && (
@@ -1235,7 +1236,7 @@ export default function CodeGeneratorPage() {
                                 disabled={retryingBatchId === batch.id}
                                 className="text-warning-600 hover:bg-warning-50 dark:hover:bg-warning-900/20"
                               >
-                                {retryingBatchId === batch.id ? "Retrying..." : "Retry"}
+                                {retryingBatchId === batch.id ? t("retrying") : t("retry")}
                               </Button>
                             )}
                             <Button
@@ -1266,7 +1267,7 @@ export default function CodeGeneratorPage() {
               {batchesTotalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing page {batchesPage} of {batchesTotalPages} ({batchesTotalItems} total batches)
+                    {t("showingPage", { page: batchesPage, totalPages: batchesTotalPages, totalItems: batchesTotalItems })}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -1274,18 +1275,18 @@ export default function CodeGeneratorPage() {
                       size="sm"
                       onClick={() => setBatchesPage(Math.max(1, batchesPage - 1))}
                       disabled={batchesPage <= 1}
-                      startIcon={<ChevronLeftIcon className="h-4 w-4" />}
+                      startIcon={<ChevronLeftIcon className="h-4 w-4 rtl:rotate-180" />}
                     >
-                      Previous
+                      {t("previous")}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setBatchesPage(Math.min(batchesTotalPages, batchesPage + 1))}
                       disabled={batchesPage >= batchesTotalPages}
-                      endIcon={<ChevronRightIcon className="h-4 w-4" />}
+                      endIcon={<ChevronRightIcon className="h-4 w-4 rtl:rotate-180" />}
                     >
-                      Next
+                      {t("next")}
                     </Button>
                   </div>
                 </div>
@@ -1307,16 +1308,16 @@ export default function CodeGeneratorPage() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p className="mt-4 text-gray-500 dark:text-gray-400">Loading batch details...</p>
+            <p className="mt-4 text-gray-500 dark:text-gray-400">{t("loadingBatchDetails")}</p>
           </div>
         ) : selectedBatchDetails ? (
           <div>
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                Batch Details
+                {t("batchDetails")}
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                View detailed information about this batch
+                {t("viewBatchDetails")}
               </p>
             </div>
 
@@ -1324,7 +1325,7 @@ export default function CodeGeneratorPage() {
               {/* Batch Name */}
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                 <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                  Batch Name
+                  {t("batchName")}
                 </label>
                 <p className="mt-1 text-lg font-semibold text-gray-800 dark:text-white">
                   {selectedBatchDetails.batch_name}
@@ -1335,7 +1336,7 @@ export default function CodeGeneratorPage() {
               {selectedBatchDetails.description && (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                   <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                    Description
+                    {t("description")}
                   </label>
                   <p className="mt-1 text-gray-700 dark:text-gray-300">
                     {selectedBatchDetails.description}
@@ -1346,7 +1347,7 @@ export default function CodeGeneratorPage() {
               {/* Job ID */}
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                 <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                  Job ID
+                  {t("jobId")}
                 </label>
                 <code className="mt-1 block rounded bg-gray-200 px-2 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                   {selectedBatchDetails.job_id}
@@ -1357,7 +1358,7 @@ export default function CodeGeneratorPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                   <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                    Total Codes
+                    {t("totalCodes")}
                   </label>
                   <p className="mt-1 text-2xl font-bold text-brand-500">
                     {parseInt(selectedBatchDetails.total_codes).toLocaleString()}
@@ -1365,7 +1366,7 @@ export default function CodeGeneratorPage() {
                 </div>
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                   <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                    Status
+                    {t("status")}
                   </label>
                   <div className="mt-2">
                     <Badge color={getStatusColor(selectedBatchDetails.status as BatchJob["status"])} variant="light">
@@ -1378,7 +1379,7 @@ export default function CodeGeneratorPage() {
               {/* Progress */}
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                 <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                  Progress
+                  {t("progress")}
                 </label>
                 <div className="mt-2 space-y-2">
                   <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -1402,7 +1403,7 @@ export default function CodeGeneratorPage() {
               {/* Created At */}
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                 <label className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                  Created At (CST)
+                  {t("createdAtCST")}
                 </label>
                 <p className="mt-1 text-gray-700 dark:text-gray-300">
                   {formatDateTime(selectedBatchDetails.created_at)}
@@ -1421,11 +1422,11 @@ export default function CodeGeneratorPage() {
                   }}
                   startIcon={<DownloadIcon className="h-4 w-4" />}
                 >
-                  Download
+                  {t("download")}
                 </Button>
               )}
               <Button variant="outline" onClick={closeDetailsModal}>
-                Close
+                {t("close")}
               </Button>
             </div>
           </div>
@@ -1443,13 +1444,15 @@ export default function CodeGeneratorPage() {
             <TrashBinIcon className="h-6 w-6" />
           </div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Delete Batch
+            {t("deleteBatch")}
           </h3>
         </div>
         
         <p className="mb-6 text-gray-500 dark:text-gray-400">
-          Are you sure you want to delete the batch <strong className="text-gray-700 dark:text-gray-300">{batchToDelete?.batch_name}</strong>? 
-          This action cannot be undone.
+          {t("deleteConfirmation", { batchName: batchToDelete?.batch_name || "" })}
+        </p>
+        <p className="mb-6 text-sm text-error-600 dark:text-error-400">
+          {t("deleteWarning")}
         </p>
         <div className="flex justify-end gap-3">
           <Button
@@ -1457,14 +1460,14 @@ export default function CodeGeneratorPage() {
             onClick={closeDeleteModal}
             disabled={deletingBatchId !== null}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleDeleteBatch}
             disabled={deletingBatchId !== null}
             className="bg-error-600 hover:bg-error-700 text-white"
           >
-            {deletingBatchId !== null ? "Deleting..." : "Delete"}
+            {deletingBatchId !== null ? t("deleting") : t("delete")}
           </Button>
         </div>
       </Modal>

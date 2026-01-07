@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
@@ -29,6 +30,7 @@ interface Brand {
 }
 
 export default function BrandsPage() {
+  const t = useTranslations("Brands");
   const { token } = useAuth();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,15 +73,15 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to fetch brands.";
+        let errorMessage = t("fetchError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to view brands. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "view" });
         } else if (response.status === 404) {
-          errorMessage = "The brands resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while fetching brands. Please try again later.";
+          errorMessage = t("serverError", { action: "fetching" });
         } else if (response.status >= 400) {
-          errorMessage = "A request error occurred while fetching brands. Please check your input and try again.";
+          errorMessage = t("requestError", { action: "fetching" });
         }
         throw new Error(errorMessage);
       }
@@ -110,7 +112,7 @@ export default function BrandsPage() {
 
   const handleAddBrand = async () => {
     if (!brandName.trim()) {
-      setFormError("Brand name is required");
+      setFormError(t("brandNameRequired"));
       return;
     }
 
@@ -128,25 +130,25 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to create brand.";
+        let errorMessage = t("createError");
         if (response.status === 400) {
           const errorData = await response.json();
-          errorMessage = errorData.errors[0].msg || "Invalid brand data provided.";
+          errorMessage = errorData.errors[0].msg || t("invalidDataError");
         }else if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to create brands. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "create" });
         } else if (response.status === 404) {
-          errorMessage = "The brands resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while creating the brand. Please try again later.";
+          errorMessage = t("serverError", { action: "creating" });
         } else if (response.status >= 400) {
-          errorMessage = "A request error occurred while creating the brand. Please check your input and try again.";
+          errorMessage = t("requestError", { action: "creating" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchBrands();
       setIsAddModalOpen(false);
-      showSuccess("Brand created successfully");
+      showSuccess(t("brandCreatedSuccess"));
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -165,7 +167,7 @@ export default function BrandsPage() {
   const handleEditBrand = async () => {
     if (!selectedBrand) return;
     if (!brandName.trim()) {
-      setFormError("Brand name is required");
+      setFormError(t("brandNameRequired"));
       return;
     }
 
@@ -183,22 +185,22 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to update brand.";
+        let errorMessage = t("updateError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to update brands. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "update" });
         } else if (response.status === 404) {
-          errorMessage = "The brand resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while updating the brand. Please try again later.";
+          errorMessage = t("serverError", { action: "updating" });
         } else if (response.status >= 400) {
-          errorMessage = "A request error occurred while updating the brand. Please check your input and try again.";
+          errorMessage = t("requestError", { action: "updating" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchBrands();
       setIsEditModalOpen(false);
-      showSuccess("Brand updated successfully");
+      showSuccess(t("brandUpdatedSuccess"));
       setSelectedBrand(null);
     } catch (err: any) {
       setFormError(err.message);
@@ -226,22 +228,22 @@ export default function BrandsPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to delete brand.";
+        let errorMessage = t("deleteError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to delete brands. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "delete" });
         } else if (response.status === 404) {
-          errorMessage = "The brand resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while deleting the brand. Please try again later.";
+          errorMessage = t("serverError", { action: "deleting" });
         } else if (response.status >= 400) {
-          errorMessage = "A request error occurred while deleting the brand. Please check your input and try again.";
+          errorMessage = t("requestError", { action: "deleting" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchBrands();
       setIsDeleteModalOpen(false);
-      showSuccess("Brand deleted successfully");
+      showSuccess(t("brandDeletedSuccess"));
       setSelectedBrand(null);
     } catch (err: any) {
       setFormError(err.message);
@@ -252,23 +254,23 @@ export default function BrandsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageBreadcrumb pageTitle="Brands" />
+      <PageBreadcrumb pageTitle={t("title")} />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72 relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-5 w-5" />
             </div>
           <Input
             type="text"
-            placeholder="Search brands..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={handleSearch}
-            className="w-full pl-11"
+            className="w-full pl-11 rtl:pl-4 rtl:pr-11"
           />
         </div>
-        <Button aria-label="Add Brand" onClick={openAddModal} startIcon={<PlusIcon />}>
-          Add Brand
+        <Button aria-label={t("addBrand")} onClick={openAddModal} startIcon={<PlusIcon />}>
+          {t("addBrand")}
         </Button>
 </div>
       {successMessage && (
@@ -286,11 +288,11 @@ export default function BrandsPage() {
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-gray-800">
             <TableRow>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Name
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("name")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-                Actions
+              <TableCell isHeader className="px-6 py-3 text-right rtl:text-left font-medium text-gray-500 dark:text-gray-400">
+                {t("actions")}
               </TableCell>
             </TableRow>
           </TableHeader>
@@ -298,16 +300,14 @@ export default function BrandsPage() {
             {loading ? (
               <TableRow>
                 <TableCell className="px-6 py-4 text-center text-gray-500" >
-                  Loading...
+                  {t("loading")}
                 </TableCell>
-                <TableCell className="px-6 py-4"></TableCell>
               </TableRow>
             ) : filteredBrands.length === 0 ? (
               <TableRow>
                 <TableCell className="px-6 py-4 text-center text-gray-500" >
-                  No brands found
+                  {t("noBrandsFound")}
                 </TableCell>
-                <TableCell className="px-6 py-4"></TableCell>
               </TableRow>
             ) : (
               filteredBrands.map((brand) => (
@@ -318,19 +318,19 @@ export default function BrandsPage() {
                   <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
                     {brand.name}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-6 py-4 text-right rtl:text-left">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        title="Edit Brand"
-                        aria-label="Edit Brand"
+                        title={t("editBrand")}
+                        aria-label={t("editBrand")}
                         onClick={() => openEditModal(brand)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        title="Delete Brand"
-                        aria-label="Delete Brand"
+                        title={t("deleteBrand")}
+                        aria-label={t("deleteBrand")}
                         onClick={() => openDeleteModal(brand)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-error-500 hover:bg-error-50 hover:text-error-600 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
                       >
@@ -352,15 +352,15 @@ export default function BrandsPage() {
         className="max-w-[500px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Add New Brand
+          {t("addNewBrand")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="brandName">Brand Name</Label>
+            <Label htmlFor="brandName">{t("brandName")}</Label>
             <Input
               id="brandName"
               type="text"
-              placeholder="Enter brand name"
+              placeholder={t("enterBrandName")}
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
               error={!!formError}
@@ -373,10 +373,10 @@ export default function BrandsPage() {
               onClick={() => setIsAddModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleAddBrand} disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Brand"}
+              {isSubmitting ? t("adding") : t("addBrand")}
             </Button>
           </div>
         </div>
@@ -389,15 +389,15 @@ export default function BrandsPage() {
         className="max-w-[500px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Edit Brand
+          {t("editBrandTitle")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="editBrandName">Brand Name</Label>
+            <Label htmlFor="editBrandName">{t("brandName")}</Label>
             <Input
               id="editBrandName"
               type="text"
-              placeholder="Enter brand name"
+              placeholder={t("enterBrandName")}
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
               error={!!formError}
@@ -410,10 +410,10 @@ export default function BrandsPage() {
               onClick={() => setIsEditModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleEditBrand} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? t("saving") : t("save")}
             </Button>
           </div>
         </div>
@@ -430,13 +430,13 @@ export default function BrandsPage() {
                 <TrashBinIcon className="h-6 w-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Delete Brand
+                {t("deleteBrandTitle")}
             </h3>
         </div>
         
         <p className="mb-6 text-gray-500 dark:text-gray-400">
-          Are you sure you want to delete the brand <strong>{selectedBrand?.name}</strong>? 
-          This action cannot be undone. All associated products and QR codes will be removed permanently.
+          {t("deleteConfirmation")} <strong>{selectedBrand?.name}</strong>? 
+          {t("deleteWarning")}
         </p>
         <div className="flex justify-end gap-3">
           <Button
@@ -444,14 +444,14 @@ export default function BrandsPage() {
             onClick={() => setIsDeleteModalOpen(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleDeleteBrand}
             disabled={isSubmitting}
             className="bg-error-600 hover:bg-error-700 text-white"
           >
-            {isSubmitting ? "Deleting..." : "Delete"}
+            {isSubmitting ? t("deleting") : t("delete")}
           </Button>
         </div>
       </Modal>
