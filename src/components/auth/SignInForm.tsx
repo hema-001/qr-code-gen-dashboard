@@ -6,17 +6,14 @@ import { EyeCloseIcon, EyeIcon } from "@/icons";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslations } from "next-intl";
 import * as yup from "yup";
 import LanguageSelector from "@/components/header/LanguageSelector";
-
-const schema = yup.object().shape({
-  username: yup.string().required("Username is required"),
-  password: yup.string().required("Password is required"),
-});
 
 export default function SignInForm() {
   const router = useRouter();
   const { login } = useAuth();
+  const t = useTranslations("Auth");
   const [showPassword, setShowPassword] = useState(false);
 
   const [username, setUsername] = useState("");
@@ -24,6 +21,11 @@ export default function SignInForm() {
   const [error, setError] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+
+  const schema = yup.object().shape({
+    username: yup.string().required(t("usernameRequired")),
+    password: yup.string().required(t("passwordRequired")),
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +46,9 @@ export default function SignInForm() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Invalid username or password");
+          throw new Error(t("invalidCredentials"));
         } else {
-          throw new Error("Login failed");
+          throw new Error(t("loginFailed"));
         }
       }
 
@@ -55,7 +57,7 @@ export default function SignInForm() {
       const user = data.user;
 
       if (!token) {
-         throw new Error("No token received");
+         throw new Error(t("noTokenReceived"));
       }
 
       login(token, user);
@@ -70,7 +72,7 @@ export default function SignInForm() {
         });
         setErrors(newErrors);
       } else {
-        setError(err.message || "An unexpected error occurred");
+        setError(err.message || t("unexpectedError"));
       }
     } finally {
       setLoading(false);
@@ -86,10 +88,10 @@ export default function SignInForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign In
+              {t("signIn")}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your username and password to sign in!
+              {t("signInDescription")}
             </p>
           </div>
           <div>
@@ -103,10 +105,10 @@ export default function SignInForm() {
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Username <span className="text-error-500">*</span>{" "}
+                    {t("username")} <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input 
-                    placeholder="Enter your username" 
+                    placeholder={t("enterUsername")} 
                     type="text" 
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -116,19 +118,19 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>{" "}
+                    {t("password")} <span className="text-error-500">*</span>{" "}
                   </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder={t("enterPassword")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       error={!!errors.password}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 rtl:right-auto rtl:left-4 top-1/2"
                     >
                       {showPassword ? (
                         <EyeIcon className="fill-gray-500 dark:fill-gray-400" />
@@ -143,7 +145,7 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Button className="w-full" size="sm" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign in"}
+                    {loading ? t("signingIn") : t("signIn")}
                   </Button>
                 </div>
               </div>

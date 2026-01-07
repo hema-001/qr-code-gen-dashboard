@@ -14,11 +14,12 @@ export default function AdminLayout({
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
   // Dynamic class for main content margin based on sidebar state
+  // Using logical properties (ms = margin-start) for RTL support
   const mainContentMargin = isMobileOpen
-    ? "ml-0"
+    ? "ms-0"
     : isExpanded || isHovered
-    ? "lg:ml-[290px]"
-    : "lg:ml-[90px]";
+    ? "lg:ms-[290px]"
+    : "lg:ms-[90px]";
 
   return (
     <div className="min-h-screen xl:flex">

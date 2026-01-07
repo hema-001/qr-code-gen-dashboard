@@ -9,6 +9,7 @@ import React from "react";
 import {hasLocale} from 'next-intl';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
+import {getTranslations} from 'next-intl/server';
 
 type Props = {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export default async function LocaleLayout({children, params}: Props) {
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
+  const t = await getTranslations('Auth');
   return (
     <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
       <ThemeProvider>
@@ -40,12 +42,12 @@ export default async function LocaleLayout({children, params}: Props) {
                   />
                 </Link>
                 <p className="text-center text-gray-400 dark:text-white/60">
-                  Generate unlimited QR codes for your products with ease.
+                  {t('tagline')}
                 </p>
               </div>
             </div>
           </div>
-          <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
+          <div className="fixed bottom-6 right-6 rtl:right-auto rtl:left-6 z-50 hidden sm:block">
             <ThemeTogglerTwo />
           </div>
         </div>

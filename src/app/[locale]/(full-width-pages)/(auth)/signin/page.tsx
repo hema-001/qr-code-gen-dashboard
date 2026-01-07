@@ -2,8 +2,8 @@ import SignInForm from "@/components/auth/SignInForm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+  title: "QRHub SignIn Page | QRHub Generate Unlimited QR Codes",
+  description: "This is the sign-in page for QRHub, your go-to platform for generating unlimited QR codes with ease and efficiency.",
 };
 
 export default function SignIn() {

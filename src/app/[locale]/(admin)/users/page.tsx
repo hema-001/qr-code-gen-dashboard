@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
@@ -33,6 +34,7 @@ interface User {
 
 export default function UsersPage() {
   const { token } = useAuth();
+  const t = useTranslations("Users");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,9 +59,9 @@ export default function UsersPage() {
   const [brands, setBrands] = useState<{id: number, name: string}[]>([]);
 
   const roleOptions = [
-    { value: "super_admin", label: "Super Admin" },
-    { value: "admin", label: "Admin" },
-    { value: "user", label: "User" },
+    { value: "super_admin", label: t("roleSuperAdmin") },
+    { value: "admin", label: t("roleAdmin") },
+    { value: "user", label: t("roleUser") },
   ];
 
   useEffect(() => {
@@ -84,20 +86,20 @@ export default function UsersPage() {
         },
       });
         if (!response.ok) {
-        let errorMessage = "Failed to fetch brands.";
+        let errorMessage = t("fetchBrandsError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to view brands. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "view" });
         } else if (response.status === 404) {
-          errorMessage = "The brands resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while fetching brands. Please try again later.";
+          errorMessage = t("serverError", { action: "fetching" });
         }
         throw new Error(errorMessage);
     }
         const data = await response.json();
         setBrands(data);
     } catch (err: any) {
-        setError(err.message || "An error occurred while fetching brands");
+        setError(err.message || t("fetchBrandsError"));
     } finally {
         setLoading(false);
     }
@@ -114,15 +116,15 @@ export default function UsersPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to fetch users.";
+        let errorMessage = t("fetchError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to view users. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "view" });
         } else if (response.status === 404) {
-          errorMessage = "The users resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while fetching users. Please try again later.";
+          errorMessage = t("serverError", { action: "fetching" });
         } else if (response.status >= 400) {
-          errorMessage = "A request error occurred while fetching users. Please check your input and try again.";
+          errorMessage = t("requestError");
         }
         throw new Error(errorMessage);
       }
@@ -130,7 +132,7 @@ export default function UsersPage() {
       const data = await response.json();
       setUsers(data);
     } catch (err: any) {
-      setError(err.message || "An error occurred while fetching users");
+      setError(err.message || t("fetchError"));
     } finally {
       setLoading(false);
     }
@@ -156,15 +158,15 @@ export default function UsersPage() {
 
   const handleAddUser = async () => {
     if (!username.trim()) {
-      setFormError("Username is required");
+      setFormError(t("usernameRequired"));
       return;
     }
     if (!password.trim()) {
-      setFormError("Password is required");
+      setFormError(t("passwordRequired"));
       return;
     }
     if (!role) {
-      setFormError("Role is required");
+      setFormError(t("roleRequired"));
       return;
     }
 
@@ -185,24 +187,24 @@ export default function UsersPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to create user.";
+        let errorMessage = t("createError");
         if (response.status === 400) {
           const errorData = await response.json();
-          errorMessage = errorData.errors?.[0]?.msg || errorData.message || "Invalid user data provided.";
+          errorMessage = errorData.errors?.[0]?.msg || errorData.message || t("invalidDataError");
         } else if (response.status === 409) {
             const errorData = await response.json();
-            errorMessage = errorData.message || "Username already exists.";
+            errorMessage = errorData.message || t("usernameExistsError");
         } else if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to create users. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "create" });
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while creating the user. Please try again later.";
+          errorMessage = t("serverError", { action: "creating" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchUsers();
       setIsAddModalOpen(false);
-      showSuccess("User created successfully");
+      showSuccess(t("userCreatedSuccess"));
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -224,7 +226,7 @@ export default function UsersPage() {
   const handleEditUser = async () => {
     if (!selectedUser) return;
     if (!username.trim()) {
-      setFormError("Username is required");
+      setFormError(t("usernameRequired"));
       return;
     }
 
@@ -247,26 +249,26 @@ export default function UsersPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to update user.";
+        let errorMessage = t("updateError");
         if (response.status === 400) {
             const errorData = await response.json();
-            errorMessage = errorData.errors?.[0]?.msg || errorData.message || "Invalid user data provided.";
+            errorMessage = errorData.errors?.[0]?.msg || errorData.message || t("invalidDataError");
         } else if (response.status === 409) {
             const errorData = await response.json();
-            errorMessage = errorData.message || "Username already exists.";
+            errorMessage = errorData.message || t("usernameExistsError");
         } else if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to update users. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "update" });
         } else if (response.status === 404) {
-          errorMessage = "The user resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while updating the user. Please try again later.";
+          errorMessage = t("serverError", { action: "updating" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchUsers();
       setIsEditModalOpen(false);
-      showSuccess("User updated successfully");
+      showSuccess(t("userUpdatedSuccess"));
       setSelectedUser(null);
     } catch (err: any) {
       setFormError(err.message);
@@ -294,25 +296,25 @@ export default function UsersPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to delete user.";
+        let errorMessage = t("deleteError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to delete users. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "delete" });
         } else if (response.status === 404) {
-          errorMessage = "The user resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while deleting the user. Please try again later.";
+          errorMessage = t("serverError", { action: "deleting" });
         }
         throw new Error(errorMessage);
       }
 
       await fetchUsers();
       setIsDeleteModalOpen(false);
-      showSuccess("User deleted successfully");
+      showSuccess(t("userDeletedSuccess"));
       setSelectedUser(null);
     } catch (err: any) {
       setFormError(err.message);
       if (typeof window !== "undefined") {
-        window.alert(err?.message || "An error occurred while deleting the user");
+        window.alert(err?.message || t("deleteError"));
       }
     } finally {
       setIsSubmitting(false);
@@ -321,23 +323,23 @@ export default function UsersPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageBreadcrumb pageTitle="Users" />
+      <PageBreadcrumb pageTitle={t("title")} />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72 relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-5 w-5" />
             </div>
           <Input
             type="text"
-            placeholder="Search users..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={handleSearch}
-            className="w-full pl-11"
+            className="w-full pl-11 rtl:pl-4 rtl:pr-11"
           />
         </div>
-        <Button aria-label="Add User" onClick={openAddModal} startIcon={<PlusIcon />}>
-          Add User
+        <Button aria-label={t("addUser")} onClick={openAddModal} startIcon={<PlusIcon />}>
+          {t("addUser")}
         </Button>
       </div>
 
@@ -356,31 +358,31 @@ export default function UsersPage() {
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-gray-800">
             <TableRow>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Username
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("username")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Role
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("role")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Brand
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("brand")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-                Actions
+              <TableCell isHeader className="px-6 py-3 text-right rtl:text-left font-medium text-gray-500 dark:text-gray-400">
+                {t("actions")}
               </TableCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500" colSpan={4}>
-                  Loading...
+                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-4">
+                  {t("loading")}
                 </TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500" colSpan={4}>
-                  No users found
+                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-4">
+                  {t("noUsersFound")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -396,21 +398,21 @@ export default function UsersPage() {
                     {user.role}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
-                    {brands.find(brand => brand.id === user.brand_id)?.name || "N/A"}
+                    {brands.find(brand => brand.id === user.brand_id)?.name || t("notAssigned")}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-6 py-4 text-right rtl:text-left">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        title="Edit User"
-                        aria-label="Edit User"
+                        title={t("editUser")}
+                        aria-label={t("editUser")}
                         onClick={() => openEditModal(user)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        title="Delete User"
-                        aria-label="Delete User"
+                        title={t("deleteUser")}
+                        aria-label={t("deleteUser")}
                         onClick={() => openDeleteModal(user)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-error-500 hover:bg-error-50 hover:text-error-600 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
                       >
@@ -432,48 +434,48 @@ export default function UsersPage() {
         className="max-w-[500px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Add New User
+          {t("addNewUser")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t("username")}</Label>
             <Input
               id="username"
               type="text"
-              placeholder="Enter username"
+              placeholder={t("enterUsername")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              error={!!formError && formError.includes("Username")}
+              error={!!formError && formError.includes(t("username"))}
             />
           </div>
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("password")}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Enter password"
+              placeholder={t("enterPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              error={!!formError && formError.includes("Password")}
+              error={!!formError && formError.includes(t("password"))}
             />
           </div>
           <div>
-            <Label htmlFor="role">Role</Label>
+            <Label htmlFor="role">{t("role")}</Label>
             <Select
                 key={isAddModalOpen ? 'add-role' : 'closed'}
                 options={roleOptions}
-                placeholder="Select Role"
+                placeholder={t("selectRole")}
                 onChange={(value) => setRole(value)}
                 defaultValue={role}
             />
           </div>
           <div>
-            <Label htmlFor="brandId">Brand (Optional)</Label>
+            <Label htmlFor="brandId">{t("brandOptional")}</Label>
             <Select
-              id="brandId"
-              options={brands.map(brand => ({ value: brand.id, label: brand.name }))}
-              placeholder="Select Brand"
-              value={brandId}
+              key={isAddModalOpen ? `add-brand-${brandId}` : 'closed'}
+              options={brands.map(brand => ({ value: brand.id.toString(), label: brand.name }))}
+              placeholder={t("selectBrand")}
+              defaultValue={brandId}
               onChange={(value) => setBrandId(value)}
             />
           </div>
@@ -484,10 +486,10 @@ export default function UsersPage() {
               onClick={() => setIsAddModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleAddUser} disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add User"}
+              {isSubmitting ? t("adding") : t("addUser")}
             </Button>
           </div>
         </div>
@@ -500,47 +502,47 @@ export default function UsersPage() {
         className="max-w-[500px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Edit User
+          {t("editUserTitle")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="editUsername">Username</Label>
+            <Label htmlFor="editUsername">{t("username")}</Label>
             <Input
               id="editUsername"
               type="text"
-              placeholder="Enter username"
+              placeholder={t("enterUsername")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              error={!!formError && formError.includes("Username")}
+              error={!!formError && formError.includes(t("username"))}
             />
           </div>
           <div>
-            <Label htmlFor="editPassword">Password (Leave blank to keep current)</Label>
+            <Label htmlFor="editPassword">{t("passwordKeepCurrent")}</Label>
             <Input
               id="editPassword"
               type="password"
-              placeholder="Enter new password"
+              placeholder={t("enterNewPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="editRole">Role</Label>
+            <Label htmlFor="editRole">{t("role")}</Label>
             <Select
                 key={selectedUser ? `edit-role-${selectedUser.id}` : 'closed'}
                 options={roleOptions}
-                placeholder="Select Role"
+                placeholder={t("selectRole")}
                 onChange={(value) => setRole(value)}
                 defaultValue={role}
             />
           </div>
           <div>
-            <Label htmlFor="editBrandId">Brand (Optional)</Label>
+            <Label htmlFor="editBrandId">{t("brandOptional")}</Label>
             <Select
-              id="editBrandId"
-              options={brands.map(brand => ({ value: brand.id, label: brand.name }))}
-              placeholder="Select Brand"
-              value={brandId}
+              key={selectedUser ? `edit-brand-${selectedUser.id}-${brandId}` : 'closed'}
+              options={brands.map(brand => ({ value: brand.id.toString(), label: brand.name }))}
+              placeholder={t("selectBrand")}
+              defaultValue={brandId}
               onChange={(value) => setBrandId(value)}
             />
           </div>
@@ -551,10 +553,10 @@ export default function UsersPage() {
               onClick={() => setIsEditModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleEditUser} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? t("saving") : t("save")}
             </Button>
           </div>
         </div>
@@ -571,13 +573,13 @@ export default function UsersPage() {
                 <TrashBinIcon className="h-6 w-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Delete User
+                {t("deleteUserTitle")}
             </h3>
         </div>
         
         <p className="mb-6 text-gray-500 dark:text-gray-400">
-          Are you sure you want to delete the user <strong>{selectedUser?.username}</strong>? 
-          This action cannot be undone.
+          {t("deleteConfirmation")} <strong>{selectedUser?.username}</strong>? 
+          {t("deleteWarning")}
         </p>
         <div className="flex justify-end gap-3">
           <Button
@@ -585,14 +587,14 @@ export default function UsersPage() {
             onClick={() => setIsDeleteModalOpen(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleDeleteUser}
             disabled={isSubmitting}
             className="bg-error-600 hover:bg-error-700 text-white"
           >
-            {isSubmitting ? "Deleting..." : "Delete"}
+            {isSubmitting ? t("deleting") : t("delete")}
           </Button>
         </div>
       </Modal>

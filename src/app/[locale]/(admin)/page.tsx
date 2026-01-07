@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import StatCard from "@/components/dashboard/StatCard";
@@ -88,6 +89,7 @@ type PeriodType = "7d" | "30d" | "90d";
 
 export default function DashboardPage() {
   const { token } = useAuth();
+  const t = useTranslations("Dashboard");
 
   // Data states
   const [overview, setOverview] = useState<OverviewData | null>(null);
@@ -255,7 +257,7 @@ export default function DashboardPage() {
               : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           }`}
         >
-          {period === "7d" ? "7 Days" : period === "30d" ? "30 Days" : "90 Days"}
+          {period === "7d" ? t("days7") : period === "30d" ? t("days30") : t("days90")}
         </button>
       ))}
     </div>
@@ -263,7 +265,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6">
-      <PageBreadcrumb pageTitle="Dashboard Overview" />
+      <PageBreadcrumb pageTitle={t("title")} />
 
       {error && (
         <div className="mb-6 rounded-lg border border-error-200 bg-error-50 p-4 text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
@@ -274,11 +276,11 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total QR Codes"
+          title={t("totalQRCodes")}
           value={loadingOverview ? "..." : overview?.qrCodes.total || 0}
           subtitle={
             overview
-              ? `${overview.qrCodes.usagePercentage.toFixed(1)}% used`
+              ? `${overview.qrCodes.usagePercentage.toFixed(1)}% ${t("used")}`
               : undefined
           }
           color="primary"
@@ -299,10 +301,10 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          title="Total Scans"
+          title={t("totalScans")}
           value={loadingOverview ? "..." : overview?.scans.total || 0}
           subtitle={
-            overview ? `${overview.scans.last24Hours} in last 24h` : undefined
+            overview ? `${overview.scans.last24Hours} ${t("last24Hours")}` : undefined
           }
           color="success"
           icon={
@@ -328,11 +330,11 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          title="Total Batches"
+          title={t("totalBatches")}
           value={loadingOverview ? "..." : overview?.batches.total || 0}
           subtitle={
             overview
-              ? `${overview.batches.completed} completed, ${overview.batches.inProgress} in progress`
+              ? `${overview.batches.completed} ${t("completed")}, ${overview.batches.inProgress} ${t("inProgress")}`
               : undefined
           }
           color="warning"
@@ -353,7 +355,7 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          title="Catalog Items"
+          title={t("catalogItems")}
           value={
             loadingOverview
               ? "..."
@@ -362,7 +364,7 @@ export default function DashboardPage() {
           }
           subtitle={
             overview
-              ? `${overview.catalog.brands} brands, ${overview.catalog.products} products`
+              ? `${overview.catalog.brands} ${t("brands")}, ${overview.catalog.products} ${t("products")}`
               : undefined
           }
           color="info"
@@ -391,10 +393,10 @@ export default function DashboardPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-                Scan Trends
+                {t("scanTrends")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                QR code scans over time
+                {t("codeGenerationOverTime")}
               </p>
             </div>
             <PeriodSelector value={scanPeriod} onChange={setScanPeriod} />
@@ -410,10 +412,10 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="mb-4">
             <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-              Scans by Location
+              {t("scansByLocation")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Geographic distribution
+              {t("geographicDistribution")}
             </p>
           </div>
           <LocationChart
@@ -430,10 +432,10 @@ export default function DashboardPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-                Batch Statistics
+                {t("batchStatistics")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Code generation over time
+                {t("codeGenerationOverTime")}
               </p>
             </div>
             <PeriodSelector value={batchPeriod} onChange={setBatchPeriod} />
@@ -450,10 +452,10 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="mb-4">
             <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-              QR Code Status
+              {t("qrCodeStatus")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Active vs Used distribution
+              {t("active")} vs {t("used")} distribution
             </p>
           </div>
           <QRCodeDistribution
@@ -475,16 +477,16 @@ export default function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-                Recent Activity
+                {t("recentActivity")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Latest scans and batch operations
+                {t("qrCodeScanned")} & {t("batchCreated")}
               </p>
             </div>
             <button
               onClick={() => fetchActivity()}
               className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-              title="Refresh"
+              title={t("refresh")}
             >
               <svg
                 className={`h-5 w-5 ${loadingActivities ? "animate-spin" : ""}`}
@@ -511,16 +513,16 @@ export default function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
-                System Health
+                {t("systemHealth")}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Database & service status
+                {t("databaseConnections")}
               </p>
             </div>
             <button
               onClick={() => fetchHealth()}
               className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-              title="Refresh"
+              title={t("refresh")}
             >
               <svg
                 className={`h-5 w-5 ${loadingHealth ? "animate-spin" : ""}`}

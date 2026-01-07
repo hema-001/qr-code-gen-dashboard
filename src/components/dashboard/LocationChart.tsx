@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 
@@ -20,6 +21,7 @@ const LocationChart: React.FC<LocationChartProps> = ({
   data,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
   const topLocations = data.slice(0, 6);
   const labels = topLocations.map(
     (item) => item.geo_location || "Unknown"
@@ -55,7 +57,7 @@ const LocationChart: React.FC<LocationChartProps> = ({
             show: true,
             total: {
               show: true,
-              label: "Total Scans",
+              label: t("totalScans"),
               fontSize: "14px",
               fontWeight: 500,
               color: "#6B7280",
@@ -75,7 +77,7 @@ const LocationChart: React.FC<LocationChartProps> = ({
     tooltip: {
       theme: "dark",
       y: {
-        formatter: (value: number) => `${value.toLocaleString()} scans`,
+        formatter: (value: number) => `${value.toLocaleString()} ${t("scans")}`,
       },
     },
     responsive: [
@@ -124,7 +126,7 @@ const LocationChart: React.FC<LocationChartProps> = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          No location data available
+          {t("noDataAvailable")}
         </p>
       </div>
     );

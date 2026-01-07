@@ -29,6 +29,8 @@ export default function LanguageSelector() {
   function handleLanguageChange(newLocale: string) {
     router.replace(pathname, { locale: newLocale });
     closeDropdown();
+    // reload the page to apply the new locale
+    router.refresh();
   }
 
   const currentLanguage = languages.find((lang) => lang.code === locale);
@@ -66,7 +68,7 @@ export default function LanguageSelector() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute right-0 mt-[17px] flex w-[150px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+        className="absolute end-0 mt-[17px] flex w-[150px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
       >
         <ul className="flex flex-col gap-1">
           {languages.map((lang) => (

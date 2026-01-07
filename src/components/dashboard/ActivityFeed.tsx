@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import Badge from "@/components/ui/badge/Badge";
 
 interface ActivityItem {
@@ -29,6 +30,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   activities,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -36,9 +39,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       (now.getTime() - date.getTime()) / (1000 * 60)
     );
 
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    if (diffInMinutes < 1) return t("justNow");
+    if (diffInMinutes < 60) return `${diffInMinutes}${t("minutesAgo")}`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}${t("hoursAgo")}`;
     return date.toLocaleDateString();
   };
 
@@ -130,7 +133,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          No recent activity
+          {t("noRecentActivity")}
         </p>
       </div>
     );
@@ -149,7 +152,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                 {activity.type === "scan" ? (
                   <>
-                    QR Code Scanned
+                    {t("qrCodeScanned")}
                     {activity.data.brand && activity.data.model && (
                       <span className="font-normal text-gray-500 dark:text-gray-400">
                         {" "}
@@ -159,7 +162,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   </>
                 ) : (
                   <>
-                    Batch Created
+                    {t("batchCreated")}
                     {activity.data.batchName && (
                       <span className="font-normal text-gray-500 dark:text-gray-400">
                         {" "}
@@ -198,7 +201,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 </span>
               )}
               {activity.type === "batch" && activity.data.totalCodes && (
-                <span>{activity.data.totalCodes} codes</span>
+                <span>{activity.data.totalCodes} {t("codes")}</span>
               )}
             </div>
           </div>

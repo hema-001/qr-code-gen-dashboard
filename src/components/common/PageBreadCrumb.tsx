@@ -1,11 +1,15 @@
+"use client";
 import Link from "next/link";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface BreadcrumbProps {
   pageTitle: string;
 }
 
 const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
+  const t = useTranslations("Common");
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
       <h2
@@ -21,9 +25,9 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
               href="/"
             >
-              Home
+              {t("home")}
               <svg
-                className="stroke-current"
+                className="stroke-current rtl:rotate-180"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"

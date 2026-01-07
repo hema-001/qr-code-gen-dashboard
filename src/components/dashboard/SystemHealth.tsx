@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import Badge from "@/components/ui/badge/Badge";
 
 interface SystemHealthProps {
@@ -24,6 +25,7 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
   data,
   loading = false,
 }) => {
+  const t = useTranslations("Dashboard");
   const getStatusColor = (
     status: "healthy" | "degraded" | "error"
   ): "success" | "warning" | "error" => {
@@ -43,7 +45,7 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
         size="sm"
         color={status === "connected" ? "success" : "error"}
       >
-        {status === "connected" ? "Connected" : "Disconnected"}
+        {status === "connected" ? t("connected") : t("disconnected")}
       </Badge>
     );
   };
@@ -103,18 +105,18 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
             }`}
           />
           <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-            System Status
+            {t("systemHealth")}
           </span>
         </div>
         <Badge size="sm" color={getStatusColor(data.status)}>
-          {data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+          {data.status === "healthy" ? t("healthy") : data.status === "degraded" ? t("degraded") : t("error")}
         </Badge>
       </div>
 
       {/* Database Connections */}
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Database Connections
+          {t("databaseConnections")}
         </h4>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -136,13 +138,13 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
       {data.issues.hasIssues && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Active Issues
+            {t("activeIssues")}
           </h4>
           <div className="space-y-2">
             {data.issues.failedBatches > 0 && (
               <div className="flex items-center justify-between rounded-lg border border-error-200 bg-error-50 p-3 dark:border-error-500/30 dark:bg-error-500/10">
                 <span className="text-sm text-error-700 dark:text-error-400">
-                  Failed Batches
+                  {t("failedBatches")}
                 </span>
                 <span className="text-sm font-medium text-error-700 dark:text-error-400">
                   {data.issues.failedBatches}
@@ -152,7 +154,7 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
             {data.issues.stuckBatches > 0 && (
               <div className="flex items-center justify-between rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-500/30 dark:bg-warning-500/10">
                 <span className="text-sm text-warning-700 dark:text-warning-400">
-                  Stuck Batches
+                  {t("stuckBatches")}
                 </span>
                 <span className="text-sm font-medium text-warning-700 dark:text-warning-400">
                   {data.issues.stuckBatches}
@@ -165,7 +167,7 @@ const SystemHealth: React.FC<SystemHealthProps> = ({
 
       {/* Last Updated */}
       <div className="pt-2 text-xs text-gray-500 dark:text-gray-400">
-        Last updated: {formatTimestamp(data.timestamp)}
+        {t("lastUpdated")}: {formatTimestamp(data.timestamp)}
       </div>
     </div>
   );

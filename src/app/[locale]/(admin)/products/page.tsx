@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
@@ -50,6 +51,7 @@ interface Brand {
 }
 
 export default function ProductsPage() {
+  const t = useTranslations("Products");
   const { token } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -122,13 +124,13 @@ export default function ProductsPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = "Failed to fetch products.";
+        let errorMessage = t("fetchError");
         if (response.status === 401 || response.status === 403) {
-          errorMessage = "You are not authorized to view products. Please sign in again.";
+          errorMessage = t("unauthorizedError", { action: "view" });
         } else if (response.status === 404) {
-          errorMessage = "The products resource could not be found.";
+          errorMessage = t("notFoundError");
         } else if (response.status >= 500) {
-          errorMessage = "A server error occurred while fetching products. Please try again later.";
+          errorMessage = t("serverError", { action: "fetching" });
         }
         throw new Error(errorMessage);
       }
@@ -175,7 +177,7 @@ export default function ProductsPage() {
 
   const handleAddProduct = async () => {
     if (!brandId || !modelName.trim() || !category.trim()) {
-      setFormError("Brand, Model Name, and Category are required");
+      setFormError(t("requiredFields"));
       return;
     }
 
@@ -206,12 +208,12 @@ export default function ProductsPage() {
       if (!response.ok) {
         console.log("Response not ok:", response);
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create product");
+        throw new Error(errorData.message || t("createError"));
       }
 
       await fetchProducts(currentPage);
       setIsAddModalOpen(false);
-      showSuccess("Product created successfully");
+      showSuccess(t("productCreatedSuccess"));
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -236,7 +238,7 @@ export default function ProductsPage() {
   const handleEditProduct = async () => {
     if (!selectedProduct) return;
     if (!brandId || !modelName.trim() || !category.trim()) {
-      setFormError("Brand, Model Name, and Category are required");
+      setFormError(t("requiredFields"));
       return;
     }
 
@@ -267,12 +269,12 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update product");
+        throw new Error(errorData.message || t("updateError"));
       }
 
       await fetchProducts(currentPage);
       setIsEditModalOpen(false);
-      showSuccess("Product updated successfully");
+      showSuccess(t("productUpdatedSuccess"));
       setSelectedProduct(null);
     } catch (err: any) {
       setFormError(err.message);
@@ -301,12 +303,12 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete product");
+        throw new Error(errorData.message || t("deleteError"));
       }
 
       await fetchProducts(currentPage);
       setIsDeleteModalOpen(false);
-      showSuccess("Product deleted successfully");
+      showSuccess(t("productDeletedSuccess"));
       setSelectedProduct(null);
     } catch (err: any) {
       setFormError(err.message);
@@ -345,23 +347,23 @@ export default function ProductsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageBreadcrumb pageTitle="Products" />
+      <PageBreadcrumb pageTitle={t("title")} />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72 relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-5 w-5" />
             </div>
           <Input
             type="text"
-            placeholder="Search products..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={handleSearch}
-            className="w-full pl-11"
+            className="w-full pl-11 rtl:pl-4 rtl:pr-11"
           />
         </div>
-        <Button aria-label="Add Product" onClick={openAddModal} startIcon={<PlusIcon />}>
-          Add Product
+        <Button aria-label={t("addProduct")} onClick={openAddModal} startIcon={<PlusIcon />}>
+          {t("addProduct")}
         </Button>
       </div>
 
@@ -381,43 +383,43 @@ export default function ProductsPage() {
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-gray-800">
             <TableRow>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Image
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("image")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Model Name
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("modelName")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Brand
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("brand")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Category
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("category")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Flavor
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("flavor")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                MG
+              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("mg")}
                 </TableCell>
-                <TableCell isHeader className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-                Code Type
+                <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
+                {t("codeType")}
                 </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-                Actions
+              <TableCell isHeader className="px-6 py-3 text-right rtl:text-left font-medium text-gray-500 dark:text-gray-400">
+                {t("actions")}
               </TableCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500" colSpan={7}>
-                  Loading...
+                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-7">
+                  {t("loading")}
                 </TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500" colSpan={7}>
-                  No products found
+                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-7">
+                  {t("noProductsFound")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -438,7 +440,7 @@ export default function ProductsPage() {
                         </div>
                     ) : (
                         <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                            No Img
+                            {t("noImage")}
                         </div>
                     )}
                   </TableCell>
@@ -460,19 +462,19 @@ export default function ProductsPage() {
                     <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
                     {product.attributes?.code_type || "-"}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <TableCell className="px-6 py-4 text-right rtl:text-left">
+                    <div className="flex items-center justify-end rtl:justify-start gap-2">
                       <button
-                        title="Edit Product"
-                        aria-label="Edit Product"
+                        title={t("editProduct")}
+                        aria-label={t("editProduct")}
                         onClick={() => openEditModal(product)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
                       <button
-                        title="Delete Product"
-                        aria-label="Delete Product"
+                        title={t("deleteProduct")}
+                        aria-label={t("deleteProduct")}
                         onClick={() => openDeleteModal(product)}
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-error-500 hover:bg-error-50 hover:text-error-600 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
                       >
@@ -490,7 +492,7 @@ export default function ProductsPage() {
       {/* Pagination Controls */}
       <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalItems)} of {totalItems} entries
+            {t("showing")} {(currentPage - 1) * limit + 1} {t("to")} {Math.min(currentPage * limit, totalItems)} {t("of")} {totalItems} {t("entries")}
         </div>
         <div className="flex items-center gap-2">
             <Button 
@@ -498,20 +500,20 @@ export default function ProductsPage() {
                 size="sm"
                 disabled={currentPage === 1} 
                 onClick={() => setCurrentPage(1)}
-                title="First Page"
+                aria-label={t("firstPage")}
                 className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
             >
-                <ChevronsLeftIcon className="w-5 h-5" />
+                <ChevronsLeftIcon className="w-5 h-5 rtl:rotate-180" />
             </Button>
             <Button 
                 variant="outline" 
                 size="sm"
                 disabled={currentPage === 1} 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                title="Previous Page"
+                aria-label={t("previousPage")}
                 className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
             >
-                <ChevronLeftIcon className="w-5 h-5" />
+                <ChevronLeftIcon className="w-5 h-5 rtl:rotate-180" />
             </Button>
             
             <div className="flex gap-1">
@@ -523,20 +525,20 @@ export default function ProductsPage() {
                 size="sm"
                 disabled={currentPage === totalPages} 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                title="Next Page"
+                aria-label={t("nextPage")}
                 className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
             >
-                <ChevronRightIcon className="w-5 h-5" />
+                <ChevronRightIcon className="w-5 h-5 rtl:rotate-180" />
             </Button>
             <Button 
                 variant="outline" 
                 size="sm"
                 disabled={currentPage === totalPages} 
                 onClick={() => setCurrentPage(totalPages)}
-                title="Last Page"
+                aria-label={t("lastPage")}
                 className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
             >
-                <ChevronsRightIcon className="w-5 h-5" />
+                <ChevronsRightIcon className="w-5 h-5 rtl:rotate-180" />
             </Button>
         </div>
       </div>
@@ -548,74 +550,74 @@ export default function ProductsPage() {
         className="max-w-[600px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Add New Product
+          {t("addNewProduct")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="brandId">Brand</Label>
+            <Label htmlFor="brandId">{t("brand")}</Label>
             <Select
               options={brandOptions}
-              placeholder="Select Brand"
+              placeholder={t("selectBrand")}
               onChange={(value) => setBrandId(value)}
               defaultValue={brandId}
             />
           </div>
           <div>
-            <Label htmlFor="modelName">Model Name</Label>
+            <Label htmlFor="modelName">{t("modelName")}</Label>
             <Input
               id="modelName"
               type="text"
-              placeholder="Enter model name"
+              placeholder={t("enterModelName")}
               value={modelName}
               onChange={(e) => setModelName(e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{t("category")}</Label>
             <Input
               id="category"
               type="text"
-              placeholder="Enter category"
+              placeholder={t("enterCategory")}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="image">Image</Label>
+            <Label htmlFor="image">{t("imageLabel")}</Label>
             <FileInput
               onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="flavor">Flavor</Label>
+              <Label htmlFor="flavor">{t("flavor")}</Label>
               <Input
                 id="flavor"
                 type="text"
-                placeholder="Enter flavor"
+                placeholder={t("enterFlavor")}
                 value={flavor}
                 onChange={(e) => setFlavor(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="mg">MG</Label>
+              <Label htmlFor="mg">{t("mg")}</Label>
               <Input
                 id="mg"
                 type="text"
-                placeholder="Enter MG"
+                placeholder={t("enterMg")}
                 value={mg}
                 onChange={(e) => setMg(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="codeType">Code Type</Label>
+              <Label htmlFor="codeType">{t("codeType")}</Label>
               <Select
                 options={[
-                  { value: "box", label: "Box" },
-                  { value: "sticker", label: "Sticker" },
-                  { value: "cap", label: "Cap" },
+                  { value: "box", label: t("codeTypeBox") },
+                  { value: "sticker", label: t("codeTypeSticker") },
+                  { value: "cap", label: t("codeTypeCap") },
                 ]}
-                placeholder="Select Code Type"
+                placeholder={t("selectCodeType")}
                 onChange={(value) => setCodeType(value)}
                 defaultValue={codeType}
               />
@@ -632,10 +634,10 @@ export default function ProductsPage() {
               onClick={() => setIsAddModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleAddProduct} disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Product"}
+              {isSubmitting ? t("adding") : t("addProduct")}
             </Button>
           </div>
         </div>
@@ -648,74 +650,74 @@ export default function ProductsPage() {
         className="max-w-[600px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          Edit Product
+          {t("editProductTitle")}
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="editBrandId">Brand</Label>
+            <Label htmlFor="editBrandId">{t("brand")}</Label>
             <Select
               options={brandOptions}
-              placeholder="Select Brand"
+              placeholder={t("selectBrand")}
               onChange={(value) => setBrandId(value)}
               defaultValue={brandId}
             />
           </div>
           <div>
-            <Label htmlFor="editModelName">Model Name</Label>
+            <Label htmlFor="editModelName">{t("modelName")}</Label>
             <Input
               id="editModelName"
               type="text"
-              placeholder="Enter model name"
+              placeholder={t("enterModelName")}
               value={modelName}
               onChange={(e) => setModelName(e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="editCategory">Category</Label>
+            <Label htmlFor="editCategory">{t("category")}</Label>
             <Input
               id="editCategory"
               type="text"
-              placeholder="Enter category"
+              placeholder={t("enterCategory")}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="editImage">Image (Leave empty to keep current)</Label>
+            <Label htmlFor="editImage">{t("imageKeepCurrent")}</Label>
             <FileInput
               onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="editFlavor">Flavor</Label>
+              <Label htmlFor="editFlavor">{t("flavor")}</Label>
               <Input
                 id="editFlavor"
                 type="text"
-                placeholder="Enter flavor"
+                placeholder={t("enterFlavor")}
                 value={flavor}
                 onChange={(e) => setFlavor(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="editMg">MG</Label>
+              <Label htmlFor="editMg">{t("mg")}</Label>
               <Input
                 id="editMg"
                 type="text"
-                placeholder="Enter MG"
+                placeholder={t("enterMg")}
                 value={mg}
                 onChange={(e) => setMg(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="editCodeType">Code Type</Label>
+              <Label htmlFor="editCodeType">{t("codeType")}</Label>
               <Select
                 options={[
-                  { value: "box", label: "Box" },
-                  { value: "sticker", label: "Sticker" },
-                  { value: "cap", label: "Cap" },
+                  { value: "box", label: t("codeTypeBox") },
+                  { value: "sticker", label: t("codeTypeSticker") },
+                  { value: "cap", label: t("codeTypeCap") },
                 ]}
-                placeholder="Select Code Type"
+                placeholder={t("selectCodeType")}
                 onChange={(value) => setCodeType(value)}
                 defaultValue={codeType}
               />
@@ -732,10 +734,10 @@ export default function ProductsPage() {
               onClick={() => setIsEditModalOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleEditProduct} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? t("saving") : t("save")}
             </Button>
           </div>
         </div>
@@ -752,13 +754,13 @@ export default function ProductsPage() {
                 <TrashBinIcon className="h-6 w-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Delete Product
+                {t("deleteProductTitle")}
             </h3>
         </div>
         
         <p className="mb-6 text-gray-500 dark:text-gray-400">
-          Are you sure you want to delete the product <strong>{selectedProduct?.model_name}</strong>? 
-          This action cannot be undone.
+          {t("deleteConfirmation")} <strong>{selectedProduct?.attributes.flavor} - {selectedProduct?.attributes.mg}MG - {selectedProduct?.attributes.code_type}</strong>? <br />
+          {t("deleteWarning")}
         </p>
         <div className="flex justify-end gap-3">
           <Button
@@ -766,14 +768,14 @@ export default function ProductsPage() {
             onClick={() => setIsDeleteModalOpen(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleDeleteProduct}
             disabled={isSubmitting}
             className="bg-error-600 hover:bg-error-700 text-white"
           >
-            {isSubmitting ? "Deleting..." : "Delete"}
+            {isSubmitting ? t("deleting") : t("delete")}
           </Button>
         </div>
       </Modal>
