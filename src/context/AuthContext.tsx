@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Store in localStorage/Cookies
     localStorage.setItem("user", JSON.stringify(newUser));
-    document.cookie = `token=${newToken}; path=/; max-age=86400; SameSite=Strict`; // Add Secure=true in production
+    document.cookie = `token=${newToken}; path=/; max-age=86400; SameSite=Strict; Secure=true;`; // Add Secure=true in production
   };
 
   const logout = () => {

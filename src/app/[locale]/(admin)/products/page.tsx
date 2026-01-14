@@ -82,8 +82,36 @@ export default function ProductsPage() {
   const [mg, setMg] = useState("");
   const [codeType, setCodeType] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageError(null);
+    
+    if (file) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        setImageError(t("imageSizeError"));
+        setImageFile(null);
+        e.target.value = ""; // Reset the input
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        setImageError(t("imageTypeError"));
+        setImageFile(null);
+        e.target.value = "";
+        return;
+      }
+    }
+    
+    setImageFile(file);
+  };
 
   useEffect(() => {
     if (token) {
@@ -166,6 +194,7 @@ export default function ProductsPage() {
     setMg("");
     setCodeType("");
     setImageFile(null);
+    setImageError(null);
     setFormError(null);
   };
 
@@ -176,7 +205,7 @@ export default function ProductsPage() {
   };
 
   const handleAddProduct = async () => {
-    if (!brandId || !modelName.trim() || !category.trim()) {
+    if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType || !imageFile) {
       setFormError(t("requiredFields"));
       return;
     }
@@ -189,9 +218,11 @@ export default function ProductsPage() {
       formData.append("brand_id", brandId);
       formData.append("model_name", modelName);
       formData.append("category", category);
-      formData.append("attributes[flavor]", flavor);
-      formData.append("attributes[mg]", mg);
-      formData.append("attributes[code_type]", codeType);
+      formData.append("attributes", JSON.stringify({
+        flavor: flavor,
+        mg: mg,
+        code_type: codeType,
+      }));
 
       if (imageFile) {
         formData.append("image", imageFile);
@@ -231,13 +262,14 @@ export default function ProductsPage() {
     setMg(product.attributes?.mg || "");
     setCodeType(product.attributes?.code_type || "");
     setImageFile(null);
+    setImageError(null);
     setFormError(null);
     setIsEditModalOpen(true);
   };
 
   const handleEditProduct = async () => {
     if (!selectedProduct) return;
-    if (!brandId || !modelName.trim() || !category.trim()) {
+    if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType) {
       setFormError(t("requiredFields"));
       return;
     }
@@ -250,10 +282,11 @@ export default function ProductsPage() {
       formData.append("brand_id", brandId);
       formData.append("model_name", modelName);
       formData.append("category", category);
-      
-      formData.append("attributes[flavor]", flavor);
-      formData.append("attributes[mg]", mg);
-      formData.append("attributes[code_type]", codeType);
+      formData.append("attributes", JSON.stringify({
+        flavor: flavor,
+        mg: mg,
+        code_type: codeType,
+      }));
 
       if (imageFile) {
         formData.append("image", imageFile);
@@ -269,6 +302,7 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.log("Error data:", errorData);
         throw new Error(errorData.message || t("updateError"));
       }
 
@@ -554,7 +588,7 @@ export default function ProductsPage() {
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="brandId">{t("brand")}</Label>
+            <Label htmlFor="brandId">{t("brand")} <span className="text-error-500">*</span></Label>
             <Select
               options={brandOptions}
               placeholder={t("selectBrand")}
@@ -563,7 +597,7 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="modelName">{t("modelName")}</Label>
+            <Label htmlFor="modelName">{t("modelName")} <span className="text-error-500">*</span></Label>
             <Input
               id="modelName"
               type="text"
@@ -573,7 +607,7 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="category">{t("category")}</Label>
+            <Label htmlFor="category">{t("category")} <span className="text-error-500">*</span></Label>
             <Input
               id="category"
               type="text"
@@ -583,14 +617,21 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="image">{t("imageLabel")}</Label>
+            <Label htmlFor="image">{t("imageLabel")} <span className="text-error-500">*</span></Label>
             <FileInput
-              onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+              onChange={handleImageChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
             />
+            {imageError && (
+              <p className="mt-1 text-sm text-error-500">{imageError}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t("imageSizeHint")}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="flavor">{t("flavor")}</Label>
+              <Label htmlFor="flavor">{t("flavor")} <span className="text-error-500">*</span></Label>
               <Input
                 id="flavor"
                 type="text"
@@ -600,17 +641,17 @@ export default function ProductsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="mg">{t("mg")}</Label>
+              <Label htmlFor="mg">{t("mg")} <span className="text-error-500">*</span></Label>
               <Input
                 id="mg"
-                type="text"
+                type="number"
                 placeholder={t("enterMg")}
                 value={mg}
                 onChange={(e) => setMg(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="codeType">{t("codeType")}</Label>
+              <Label htmlFor="codeType">{t("codeType")} <span className="text-error-500">*</span></Label>
               <Select
                 options={[
                   { value: "box", label: t("codeTypeBox") },
@@ -654,7 +695,7 @@ export default function ProductsPage() {
         </h3>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="editBrandId">{t("brand")}</Label>
+            <Label htmlFor="editBrandId">{t("brand")} <span className="text-error-500">*</span></Label>
             <Select
               options={brandOptions}
               placeholder={t("selectBrand")}
@@ -663,7 +704,7 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="editModelName">{t("modelName")}</Label>
+            <Label htmlFor="editModelName">{t("modelName")} <span className="text-error-500">*</span></Label>
             <Input
               id="editModelName"
               type="text"
@@ -673,7 +714,7 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="editCategory">{t("category")}</Label>
+            <Label htmlFor="editCategory">{t("category")} <span className="text-error-500">*</span></Label>
             <Input
               id="editCategory"
               type="text"
@@ -685,12 +726,19 @@ export default function ProductsPage() {
           <div>
             <Label htmlFor="editImage">{t("imageKeepCurrent")}</Label>
             <FileInput
-              onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+              onChange={handleImageChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
             />
+            {imageError && (
+              <p className="mt-1 text-sm text-error-500">{imageError}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t("imageSizeHint")}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="editFlavor">{t("flavor")}</Label>
+              <Label htmlFor="editFlavor">{t("flavor")} <span className="text-error-500">*</span></Label>
               <Input
                 id="editFlavor"
                 type="text"
@@ -700,17 +748,17 @@ export default function ProductsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="editMg">{t("mg")}</Label>
+              <Label htmlFor="editMg">{t("mg")} <span className="text-error-500">*</span></Label>
               <Input
                 id="editMg"
-                type="text"
+                type="number"
                 placeholder={t("enterMg")}
                 value={mg}
                 onChange={(e) => setMg(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="editCodeType">{t("codeType")}</Label>
+              <Label htmlFor="editCodeType">{t("codeType")} <span className="text-error-500">*</span></Label>
               <Select
                 options={[
                   { value: "box", label: t("codeTypeBox") },
