@@ -237,7 +237,6 @@ export default function ProductsPage() {
       });
 
       if (!response.ok) {
-        console.log("Response not ok:", response);
         const errorData = await response.json();
         throw new Error(errorData.message || t("createError"));
       }
@@ -302,7 +301,6 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("Error data:", errorData);
         throw new Error(errorData.message || t("updateError"));
       }
 

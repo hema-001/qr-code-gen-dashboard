@@ -4,7 +4,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    dangerouslyAllowLocalIP: true, // Allow loading images from localhost in development, turn off in production
+    //dangerouslyAllowLocalIP: true, // Allow loading images from localhost in development, turn off in production
     remotePatterns: [
       {
         protocol: "http",
@@ -24,8 +24,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:4000/api/:path*", // Proxy to Backend in development
-        //destination: "https://api.mjn-trading.com/api/:path*", // Proxy to Backend in production
+        //destination: "http://localhost:4000/api/:path*", // Proxy to Backend in development
+        destination: "https://api.mjn-trading.com/api/:path*", // Proxy to Backend in production
       },
     ];
   },
