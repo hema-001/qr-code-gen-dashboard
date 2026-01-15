@@ -237,7 +237,6 @@ export default function UsersPage() {
       const body: any = { username, role };
       if (password) body.password = password;
       if (brandId) body.brand_id = parseInt(brandId);
-      else body.brand_id = null;
 
       const response = await fetch(`/api/v1/admin/users/${selectedUser.id}`, {
         method: "PUT",
