@@ -127,7 +127,7 @@ export default function ProductsPage() {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch("/api/v1/admin/brands", {
+      const response = await fetch("/api/brands", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -145,7 +145,7 @@ export default function ProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/admin/products?page=${page}&limit=${limit}`, {
+      const response = await fetch(`/api/products?page=${page}&limit=${limit}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -228,7 +228,7 @@ export default function ProductsPage() {
         formData.append("image", imageFile);
       }
 
-      const response = await fetch("/api/v1/admin/products", {
+      const response = await fetch("/api/products", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`
@@ -291,7 +291,7 @@ export default function ProductsPage() {
         formData.append("image", imageFile);
       }
 
-      const response = await fetch(`/api/v1/admin/products/${selectedProduct.id}`, {
+      const response = await fetch(`/api/products/${selectedProduct.id}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -326,7 +326,7 @@ export default function ProductsPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/v1/admin/products/${selectedProduct.id}`, {
+      const response = await fetch(`/api/products/${selectedProduct.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -36,7 +36,7 @@ export default function SignInForm() {
     try {
       await schema.validate({ username, password }, { abortEarly: false });
 
-      const res = await fetch("/api/v1/admin/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

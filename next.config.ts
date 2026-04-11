@@ -4,12 +4,18 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    //dangerouslyAllowLocalIP: true, // Allow loading images from localhost in development, turn off in production
+    dangerouslyAllowLocalIP: true, // Allow loading images from localhost in development, turn off in production
     remotePatterns: [
       {
         protocol: "http",
         hostname: "localhost",
         port: "4000",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "5000",
         pathname: "/**",
       },
       {
@@ -19,16 +25,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: ["localhost:4000", "127.0.0.1:4000"],
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        //destination: "http://localhost:4000/api/:path*", // Proxy to Backend in development
-        destination: "https://api.mjn-trading.com/api/:path*", // Proxy to Backend in production
-      },
-    ];
-  },
+  allowedDevOrigins: ["localhost:5000", "127.0.0.1:5000"],
+  // Rewrites removed — all API calls now go through Next.js Route Handlers in src/app/api/
   async headers() {
     return [
       {

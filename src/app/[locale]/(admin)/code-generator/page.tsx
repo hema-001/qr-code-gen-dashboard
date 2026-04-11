@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
-import Select from "@/components/form/Select";
+import SearchableSelect from "@/components/form/SearchableSelect";
 import TextArea from "@/components/form/input/TextArea";
 import Label from "@/components/form/Label";
 import Badge from "@/components/ui/badge/Badge";
@@ -272,8 +272,8 @@ export default function CodeGeneratorPage() {
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
-      // Fetch all products (no pagination for dropdown)
-      const response = await fetch("/api/v1/admin/products?limit=1000", {
+      // Use dedicated API route to avoid Next.js rewrite proxy gzip stream issue
+      const response = await fetch("/api/products?limit=1000", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -292,7 +292,7 @@ export default function CodeGeneratorPage() {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch("/api/v1/admin/brands", {
+      const response = await fetch("/api/brands", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -310,7 +310,7 @@ export default function CodeGeneratorPage() {
   const fetchBatches = async () => {
     setLoadingBatches(true);
     try {
-      const response = await fetch(`/api/v1/admin/batches?page=${batchesPage}&limit=10`, {
+      const response = await fetch(`/api/batches?page=${batchesPage}&limit=10`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -344,7 +344,7 @@ export default function CodeGeneratorPage() {
     
     setDeletingBatchId(batchToDelete.id);
     try {
-      const response = await fetch(`/api/v1/admin/batches/${batchToDelete.id}`, {
+      const response = await fetch(`/api/batches/${batchToDelete.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -369,7 +369,7 @@ export default function CodeGeneratorPage() {
   const handleRetryBatch = async (batch: ApiBatch) => {
     setRetryingBatchId(batch.id);
     try {
-      const response = await fetch(`/api/v1/admin/batches/${batch.id}/retry`, {
+      const response = await fetch(`/api/batches/${batch.id}/retry`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -414,7 +414,7 @@ export default function CodeGeneratorPage() {
 
     setDownloadingBatchId(batch.id);
     try {
-      const response = await fetch(batch.download_url, {
+      const response = await fetch(`/api/batches/${batch.id}/download`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -458,7 +458,7 @@ export default function CodeGeneratorPage() {
     setLoadingBatchDetails(true);
     setIsDetailsModalOpen(true);
     try {
-      const response = await fetch(`/api/v1/admin/batches/${batchId}`, {
+      const response = await fetch(`/api/batches/${batchId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -673,8 +673,8 @@ export default function CodeGeneratorPage() {
       )}
 
       {/* Batch Generation Form Card */}
-      <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-t-xl border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
             {t("generateQRCodeBatch")}
           </h3>
@@ -737,7 +737,7 @@ export default function CodeGeneratorPage() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 dark:border-gray-700">
                   <Table>
                     <TableHeader className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
                       <TableRow>
@@ -786,9 +786,10 @@ export default function CodeGeneratorPage() {
                           className="border-b border-gray-100 dark:border-gray-800"
                         >
                           <TableCell className="px-4 py-3">
-                            <Select
+                            <SearchableSelect
                               options={productOptions}
                               placeholder={t("selectProduct")}
+                              searchPlaceholder={t("searchProducts")}
                               onChange={(value) =>
                                 updateBatchItem(item.id, "product_id", value)
                               }
