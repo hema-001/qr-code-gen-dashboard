@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const API_BASE = "http://192.168.2.100:4000";
+export const API_BASE = "http://192.168.2.102:4000";
 
 /**
  * Proxy a request to the backend API, fully consuming the response server-side

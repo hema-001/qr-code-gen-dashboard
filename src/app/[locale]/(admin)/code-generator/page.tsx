@@ -7,6 +7,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import SearchableSelect from "@/components/form/SearchableSelect";
+import Select from "@/components/form/Select";
 import TextArea from "@/components/form/input/TextArea";
 import Label from "@/components/form/Label";
 import Badge from "@/components/ui/badge/Badge";
@@ -39,6 +40,7 @@ interface Product {
   attributes: {
     flavor?: string;
     mg?: string;
+    ml?: string;
     code_type?: string;
   };
   Brand?: {
@@ -175,6 +177,7 @@ export default function CodeGeneratorPage() {
   // Step 2: Batch Details
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
@@ -504,7 +507,7 @@ export default function CodeGeneratorPage() {
       batchItems.map((item) => {
         if (item.id === id) {
           if (field === "product_id") {
-            const product = products.find((p) => p.id === Number(value));
+            const product = filteredProducts.find((p) => p.id === Number(value));
             return { ...item, product_id: Number(value), product };
           }
           return { ...item, [field]: value };
@@ -521,7 +524,7 @@ export default function CodeGeneratorPage() {
 
   // Validation
   const isStep1Valid = batchName.trim().length > 0;
-  const isStep2Valid = batchItems.length > 0 && batchItems.every(
+  const isStep2Valid = selectedBrandId && batchItems.length > 0 && batchItems.every(
     (item) => item.product_id > 0 && item.quantity > 0
   );
 
@@ -558,6 +561,7 @@ export default function CodeGeneratorPage() {
           product_id: item.product_id,
           quantity: item.quantity,
         })),
+        brand_id: parseInt(selectedBrandId),
       };
 
       const response = await fetch("/api/batch-generate", {
@@ -593,6 +597,7 @@ export default function CodeGeneratorPage() {
       setBatchName("");
       setDescription("");
       setBatchItems([]);
+      setSelectedBrandId("");
       setCurrentStep(1);
       setSuccessMessage(t("batchQueuedSuccess", { jobId: data.jobId }));
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -614,11 +619,35 @@ export default function CodeGeneratorPage() {
     return product.Brand?.name || brandsMap[product.brand_id] || t("unknownBrand");
   };
 
-  // Product options for dropdown
-  const productOptions = products.map((p) => ({
-    value: p.id.toString(),
-    label: `${getBrandName(p)} - (${p.attributes?.flavor || "N/A"} - ${p.attributes?.mg || "N/A"}MG - ${p.attributes?.code_type || "N/A"})`,
-  }));
+  // Get the selected brand name (lowercase for comparison)
+  const getSelectedBrandName = () => {
+    const brand = brands.find(b => b.id.toString() === selectedBrandId);
+    return brand?.name?.toLowerCase() || "";
+  };
+
+  // Filter products by selected brand
+  const filteredProducts = selectedBrandId 
+    ? products.filter(p => p.brand_id.toString() === selectedBrandId)
+    : [];
+
+  // Product options for dropdown - filtered by brand
+  const productOptions = filteredProducts.map((p) => {
+    const brandName = getSelectedBrandName();
+    // Different label format based on brand
+    if (brandName === "vgod") {
+      return {
+        value: p.id.toString(),
+        label: `${p.attributes?.flavor || "N/A"} - ${p.attributes?.ml || "N/A"}ML - ${p.attributes?.mg || "N/A"}MG`,
+      };
+    }
+    return {
+      value: p.id.toString(),
+      label: `${p.attributes?.flavor || "N/A"} - ${p.attributes?.mg || "N/A"}MG - ${p.attributes?.code_type || "N/A"}`,
+    };
+  });
+
+  // Brand options for dropdown
+  const brandOptions = brands.map(b => ({ value: b.id.toString(), label: b.name }));
 
   // Get status badge color
   const getStatusColor = (status: BatchJob["status"]) => {
@@ -717,141 +746,193 @@ export default function CodeGeneratorPage() {
           {/* Step 2: Batch Details */}
           {currentStep === 2 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("addProductsDescription")}
-                </p>
-                <Button
-                  onClick={addBatchItem}
-                  startIcon={<PlusIcon />}
-                  size="sm"
-                >
-                  {t("addItem")}
-                </Button>
+              {/* Brand Selection */}
+              <div className="mb-6">
+                <Label htmlFor="brandSelect">
+                  {t("selectBrandForBatch")} <span className="text-error-500">*</span>
+                </Label>
+                <div className="max-w-xs">
+                  <Select
+                    options={brandOptions}
+                    placeholder={t("selectBrand")}
+                    onChange={(value) => {
+                      setSelectedBrandId(value);
+                      // Clear batch items when brand changes
+                      setBatchItems([]);
+                    }}
+                    defaultValue={selectedBrandId}
+                  />
+                </div>
+                {selectedBrandId && (
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    {t("batchBrandNote", { brandName: brands.find(b => b.id.toString() === selectedBrandId)?.name || "" })}
+                  </p>
+                )}
               </div>
 
-              {batchItems.length === 0 ? (
+              {/* Products Section - only show when brand is selected */}
+              {selectedBrandId ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("addProductsDescription")}
+                    </p>
+                    <Button
+                      onClick={addBatchItem}
+                      startIcon={<PlusIcon />}
+                      size="sm"
+                    >
+                      {t("addItem")}
+                    </Button>
+                  </div>
+
+                  {batchItems.length === 0 ? (
+                    <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+                      <p className="text-gray-500 dark:text-gray-400">
+                        {t("noItemsAdded")}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 dark:border-gray-700">
+                      <Table>
+                        <TableHeader className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
+                          <TableRow>
+                            <TableCell
+                              isHeader
+                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                            >
+                              {t("product")}
+                            </TableCell>
+                            <TableCell
+                              isHeader
+                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                            >
+                              {t("flavor")}
+                            </TableCell>
+                            {/* Show ML for VGOD, Code Type for others */}
+                            {getSelectedBrandName() === "vgod" ? (
+                              <TableCell
+                                isHeader
+                                className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                              >
+                                {t("ml")}
+                              </TableCell>
+                            ) : (
+                              <TableCell
+                                isHeader
+                                className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                              >
+                                {t("codeType")}
+                              </TableCell>
+                            )}
+                            <TableCell
+                              isHeader
+                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                            >
+                              {t("mg")}
+                            </TableCell>
+                            <TableCell
+                              isHeader
+                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
+                            >
+                              {t("quantity")}
+                            </TableCell>
+                            <TableCell
+                              isHeader
+                              className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+                            >
+                              {t("actions")}
+                            </TableCell>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {batchItems.map((item) => (
+                            <TableRow
+                              key={item.id}
+                              className="border-b border-gray-100 dark:border-gray-800"
+                            >
+                              <TableCell className="px-4 py-3">
+                                <SearchableSelect
+                                  options={productOptions}
+                                  placeholder={t("selectProduct")}
+                                  searchPlaceholder={t("searchProducts")}
+                                  onChange={(value) =>
+                                    updateBatchItem(item.id, "product_id", value)
+                                  }
+                                  defaultValue={
+                                    item.product_id > 0
+                                      ? item.product_id.toString()
+                                      : ""
+                                  }
+                                  className="min-w-[200px]"
+                                />
+                              </TableCell>
+                              <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                {item.product?.attributes?.flavor || "-"}
+                              </TableCell>
+                              {/* Show ML for VGOD, Code Type for others */}
+                              {getSelectedBrandName() === "vgod" ? (
+                                <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                  {item.product?.attributes?.ml || "-"}
+                                </TableCell>
+                              ) : (
+                                <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                  {item.product?.attributes?.code_type || "-"}
+                                </TableCell>
+                              )}
+                              <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                {item.product?.attributes?.mg || "-"}
+                              </TableCell>
+                              <TableCell className="px-4 py-3">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    updateBatchItem(
+                                      item.id,
+                                      "quantity",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-24"
+                                />
+                              </TableCell>
+                              <TableCell className="px-4 py-3 text-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeBatchItem(item.id)}
+                                  className="text-error-500 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-900/20"
+                                >
+                                  <TrashBinIcon className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {batchItems.length > 0 && (
+                    <div className="flex justify-end rtl:justify-start">
+                      <div className="rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-800">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {t("totalQRCodes")}:{" "}
+                        </span>
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          {getTotalCodes().toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
                   <p className="text-gray-500 dark:text-gray-400">
-                    {t("noItemsAdded")}
+                    {t("selectBrandFirst")}
                   </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 dark:border-gray-700">
-                  <Table>
-                    <TableHeader className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
-                      <TableRow>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("product")}
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("flavor")}
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("mg")}
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("codeType")}
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("quantity")}
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
-                        >
-                          {t("actions")}
-                        </TableCell>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {batchItems.map((item) => (
-                        <TableRow
-                          key={item.id}
-                          className="border-b border-gray-100 dark:border-gray-800"
-                        >
-                          <TableCell className="px-4 py-3">
-                            <SearchableSelect
-                              options={productOptions}
-                              placeholder={t("selectProduct")}
-                              searchPlaceholder={t("searchProducts")}
-                              onChange={(value) =>
-                                updateBatchItem(item.id, "product_id", value)
-                              }
-                              defaultValue={
-                                item.product_id > 0
-                                  ? item.product_id.toString()
-                                  : ""
-                              }
-                              className="min-w-[200px]"
-                            />
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                            {item.product?.attributes?.flavor || "-"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                            {item.product?.attributes?.mg || "-"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                            {item.product?.attributes?.code_type || "-"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3">
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                updateBatchItem(
-                                  item.id,
-                                  "quantity",
-                                  parseInt(e.target.value) || 1
-                                )
-                              }
-                              className="w-24"
-                            />
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeBatchItem(item.id)}
-                              className="text-error-500 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-900/20"
-                            >
-                              <TrashBinIcon className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-
-              {batchItems.length > 0 && (
-                <div className="flex justify-end rtl:justify-start">
-                  <div className="rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-800">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t("totalQRCodes")}:{" "}
-                    </span>
-                    <span className="font-semibold text-gray-800 dark:text-white">
-                      {getTotalCodes().toLocaleString()}
-                    </span>
-                  </div>
                 </div>
               )}
             </div>
@@ -869,6 +950,12 @@ export default function CodeGeneratorPage() {
                   <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
                     <span className="text-gray-600 dark:text-gray-400">{t("batchName")}:</span>
                     <span className="font-medium text-gray-800 dark:text-white">{batchName}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">{t("brand")}:</span>
+                    <span className="font-medium text-gray-800 dark:text-white">
+                      {brands.find(b => b.id.toString() === selectedBrandId)?.name || "-"}
+                    </span>
                   </div>
                   {description && (
                     <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
@@ -903,10 +990,14 @@ export default function CodeGeneratorPage() {
                         </span>
                         <div>
                           <p className="font-medium text-gray-800 dark:text-white">
-                            {item.product ? getBrandName(item.product) : t("unknownBrand")} - {item.product?.model_name}
+                            {item.product?.attributes?.flavor || item.product?.model_name || t("unknownProduct")}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {t("flavor")}: {item.product?.attributes?.flavor || "N/A"} | {t("mg")}: {item.product?.attributes?.mg || "N/A"}
+                            {getSelectedBrandName() === "vgod" ? (
+                              <>{t("ml")}: {item.product?.attributes?.ml || "N/A"} | {t("mg")}: {item.product?.attributes?.mg || "N/A"}</>
+                            ) : (
+                              <>{t("mg")}: {item.product?.attributes?.mg || "N/A"} | {t("codeType")}: {item.product?.attributes?.code_type || "N/A"}</>
+                            )}
                           </p>
                         </div>
                       </div>
