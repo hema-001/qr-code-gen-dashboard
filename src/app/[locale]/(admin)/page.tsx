@@ -117,7 +117,7 @@ export default function DashboardPage() {
     if (!token) return;
     setLoadingOverview(true);
     try {
-      const response = await fetch("/api/v1/admin/dashboard/overview", {
+      const response = await fetch("/api/dashboard/overview", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch overview");
@@ -138,7 +138,7 @@ export default function DashboardPage() {
     if (!token) return;
     setLoadingActivities(true);
     try {
-      const response = await fetch("/api/v1/admin/dashboard/activity?limit=10", {
+      const response = await fetch("/api/dashboard/activity?limit=10", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch activity");
@@ -159,7 +159,7 @@ export default function DashboardPage() {
     setLoadingScans(true);
     try {
       const response = await fetch(
-        `/api/v1/admin/dashboard/scans/stats?period=${period}`,
+        `/api/dashboard/scans/stats?period=${period}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!response.ok) throw new Error("Failed to fetch scan stats");
@@ -180,7 +180,7 @@ export default function DashboardPage() {
     setLoadingBatches(true);
     try {
       const response = await fetch(
-        `/api/v1/admin/dashboard/batches/stats?period=${period}`,
+        `/api/dashboard/batches/stats?period=${period}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!response.ok) throw new Error("Failed to fetch batch stats");
@@ -200,7 +200,7 @@ export default function DashboardPage() {
     if (!token) return;
     setLoadingHealth(true);
     try {
-      const response = await fetch("/api/v1/admin/dashboard/health", {
+      const response = await fetch("/api/dashboard/health", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch health");

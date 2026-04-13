@@ -66,7 +66,7 @@ export default function BrandsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/v1/admin/brands", {
+      const response = await fetch("/api/brands", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -120,7 +120,7 @@ export default function BrandsPage() {
     setFormError(null);
 
     try {
-      const response = await fetch("/api/v1/admin/brands", {
+      const response = await fetch("/api/brands", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +175,7 @@ export default function BrandsPage() {
     setFormError(null);
 
     try {
-      const response = await fetch(`/api/v1/admin/brands/${selectedBrand.id}`, {
+      const response = await fetch(`/api/brands/${selectedBrand.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -220,7 +220,7 @@ export default function BrandsPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/v1/admin/brands/${selectedBrand.id}`, {
+      const response = await fetch(`/api/brands/${selectedBrand.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

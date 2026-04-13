@@ -80,7 +80,7 @@ export default function UsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/v1/admin/brands", {
+      const response = await fetch("/api/brands", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,7 +109,7 @@ export default function UsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/v1/admin/users", {
+      const response = await fetch("/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -177,7 +177,7 @@ export default function UsersPage() {
       const body: any = { username, password, role };
       if (brandId) body.brand_id = parseInt(brandId);
 
-      const response = await fetch("/api/v1/admin/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -238,7 +238,7 @@ export default function UsersPage() {
       if (password) body.password = password;
       if (brandId) body.brand_id = parseInt(brandId);
 
-      const response = await fetch(`/api/v1/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -287,7 +287,7 @@ export default function UsersPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/v1/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

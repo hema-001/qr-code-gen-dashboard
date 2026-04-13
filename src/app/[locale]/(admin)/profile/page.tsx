@@ -52,7 +52,7 @@ export default function ProfilePage() {
     setAccountFormError(null);
 
     try {
-      const response = await fetch(`/api/v1/admin/users/${user?.id}`, {
+      const response = await fetch(`/api/users/${user?.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +122,7 @@ export default function ProfilePage() {
     setPasswordFormError(null);
 
     try {
-      const response = await fetch(`/api/v1/admin/users/${user?.id}`, {
+      const response = await fetch(`/api/users/${user?.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

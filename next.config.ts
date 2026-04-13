@@ -2,16 +2,11 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Production optimizations
+  poweredByHeader: false, // Remove X-Powered-By header for security
+  
   images: {
-    //dangerouslyAllowLocalIP: true, // Allow loading images from localhost in development, turn off in production
     remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "4000",
-        pathname: "/**",
-      },
       {
         protocol: "https",
         hostname: "api.mjn-trading.com",
@@ -19,16 +14,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: ["localhost:4000", "127.0.0.1:4000"],
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        //destination: "http://localhost:4000/api/:path*", // Proxy to Backend in development
-        destination: "https://api.mjn-trading.com/api/:path*", // Proxy to Backend in production
-      },
-    ];
-  },
+  
   async headers() {
     return [
       {
@@ -36,13 +22,14 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Origin", value: "https://mjn-trading.com" },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT,OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
         ],
       },
     ];
   },
+  
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
@@ -51,15 +38,14 @@ const nextConfig: NextConfig = {
     return config;
   },
     
-    turbopack: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
-  
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();
