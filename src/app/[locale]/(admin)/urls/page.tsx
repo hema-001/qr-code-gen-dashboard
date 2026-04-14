@@ -23,6 +23,7 @@ import {
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
+  EyeIcon,
 } from "@/icons";
 import Label from "@/components/form/Label";
 import Select from "@/components/form/Select";
@@ -33,6 +34,16 @@ interface Brand {
   name: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+}
+
+interface Batch {
+  id: number;
+  batch_name: string;
+}
+
 interface Url {
   id: number;
   url: string;
@@ -41,6 +52,13 @@ interface Url {
   is_active: boolean;
   brand_id: number | null;
   brand?: Brand | null;
+  registrar: string | null;
+  domain_registration_date: string | null;
+  cloudflare_linked: boolean;
+  registered_by: number | null;
+  registeredByUser?: User | null;
+  used_in_batch: number | null;
+  batch?: Batch | null;
   created_at?: string;
 }
 
@@ -57,6 +75,8 @@ export default function UrlsPage() {
   const router = useRouter();
   const [urls, setUrls] = useState<Url[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +94,9 @@ export default function UrlsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  // Selected URL for Edit/Delete
+  // Selected URL for Edit/Delete/Details
   const [selectedUrl, setSelectedUrl] = useState<Url | null>(null);
 
   // Form State
@@ -85,6 +106,11 @@ export default function UrlsPage() {
     description: "",
     is_active: true,
     brand_id: "",
+    registrar: "",
+    domain_registration_date: "",
+    cloudflare_linked: false,
+    registered_by: "",
+    used_in_batch: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,6 +126,8 @@ export default function UrlsPage() {
     if (token && user?.role === "super_admin") {
       fetchUrls(pagination.page);
       fetchBrands();
+      fetchUsers();
+      fetchBatches();
     }
   }, [token, user]);
 
@@ -164,6 +192,44 @@ export default function UrlsPage() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Handle both array and object with users array
+        const usersArray = Array.isArray(data) ? data : (data.users || []);
+        setUsers(usersArray);
+      }
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+      const response = await fetch("/api/batches?limit=100", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Handle both array and object with batches array
+        const batchesArray = Array.isArray(data) ? data : (data.batches || []);
+        setBatches(batchesArray);
+      }
+    } catch (err) {
+      console.error("Failed to fetch batches:", err);
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
@@ -182,6 +248,11 @@ export default function UrlsPage() {
       description: "",
       is_active: true,
       brand_id: "",
+      registrar: "",
+      domain_registration_date: "",
+      cloudflare_linked: false,
+      registered_by: "",
+      used_in_batch: "",
     });
     setFormError(null);
   };
@@ -211,9 +282,22 @@ export default function UrlsPage() {
         url: formData.url,
         description: formData.description || null,
         is_active: formData.is_active,
+        cloudflare_linked: formData.cloudflare_linked,
       };
       if (formData.brand_id) {
         body.brand_id = parseInt(formData.brand_id);
+      }
+      if (formData.registrar) {
+        body.registrar = formData.registrar;
+      }
+      if (formData.domain_registration_date) {
+        body.domain_registration_date = formData.domain_registration_date;
+      }
+      if (formData.registered_by) {
+        body.registered_by = parseInt(formData.registered_by);
+      }
+      if (formData.used_in_batch) {
+        body.used_in_batch = parseInt(formData.used_in_batch);
       }
 
       const response = await fetch("/api/urls", {
@@ -263,6 +347,11 @@ export default function UrlsPage() {
       description: url.description || "",
       is_active: url.is_active,
       brand_id: url.brand_id?.toString() || "",
+      registrar: url.registrar || "",
+      domain_registration_date: url.domain_registration_date || "",
+      cloudflare_linked: url.cloudflare_linked || false,
+      registered_by: url.registered_by?.toString() || "",
+      used_in_batch: url.used_in_batch?.toString() || "",
     });
     setFormError(null);
     setIsEditModalOpen(true);
@@ -288,11 +377,24 @@ export default function UrlsPage() {
         url: formData.url,
         description: formData.description || null,
         is_active: formData.is_active,
+        cloudflare_linked: formData.cloudflare_linked,
+        registrar: formData.registrar || null,
+        domain_registration_date: formData.domain_registration_date || null,
       };
       if (formData.brand_id) {
         body.brand_id = parseInt(formData.brand_id);
       } else {
         body.brand_id = null;
+      }
+      if (formData.registered_by) {
+        body.registered_by = parseInt(formData.registered_by);
+      } else {
+        body.registered_by = null;
+      }
+      if (formData.used_in_batch) {
+        body.used_in_batch = parseInt(formData.used_in_batch);
+      } else {
+        body.used_in_batch = null;
       }
 
       const response = await fetch(`/api/urls/${selectedUrl.id}`, {
@@ -503,6 +605,17 @@ export default function UrlsPage() {
                     <TableCell className="px-6 py-4 text-right rtl:text-left">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          title={t("viewDetails")}
+                          aria-label={t("viewDetails")}
+                          onClick={() => {
+                            setSelectedUrl(url);
+                            setIsDetailsModalOpen(true);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
                           title={t("editUrl")}
                           aria-label={t("editUrl")}
                           onClick={() => openEditModal(url)}
@@ -580,31 +693,33 @@ export default function UrlsPage() {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        className="max-w-[600px] p-6"
+        className="max-w-[700px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
           {t("addNewUrl")}
         </h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="urlName">{t("name")} *</Label>
-            <Input
-              id="urlName"
-              type="text"
-              placeholder={t("enterName")}
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="urlValue">{t("url")} *</Label>
-            <Input
-              id="urlValue"
-              type="text"
-              placeholder={t("enterUrl")}
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            />
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="urlName">{t("name")} *</Label>
+              <Input
+                id="urlName"
+                type="text"
+                placeholder={t("enterName")}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="urlValue">{t("url")} *</Label>
+              <Input
+                id="urlValue"
+                type="text"
+                placeholder={t("enterUrl")}
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="urlDescription">{t("description")}</Label>
@@ -616,34 +731,93 @@ export default function UrlsPage() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="urlBrand">{t("brand")}</Label>
+              <Select
+                defaultValue={formData.brand_id}
+                onChange={(value) => setFormData({ ...formData, brand_id: value })}
+                placeholder={t("selectBrand")}
+                options={brands.map((brand) => ({
+                  value: brand.id.toString(),
+                  label: brand.name,
+                }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="urlRegistrar">{t("registrar")}</Label>
+              <Input
+                id="urlRegistrar"
+                type="text"
+                placeholder={t("enterRegistrar")}
+                value={formData.registrar}
+                onChange={(e) => setFormData({ ...formData, registrar: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="urlDomainDate">{t("domainRegistrationDate")}</Label>
+              <Input
+                id="urlDomainDate"
+                type="date"
+                value={formData.domain_registration_date}
+                onChange={(e) => setFormData({ ...formData, domain_registration_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="urlRegisteredBy">{t("registeredBy")}</Label>
+              <Select
+                defaultValue={formData.registered_by}
+                onChange={(value) => setFormData({ ...formData, registered_by: value })}
+                placeholder={t("selectUser")}
+                options={users.map((user) => ({
+                  value: user.id.toString(),
+                  label: user.username,
+                }))}
+              />
+            </div>
+          </div>
           <div>
-            <Label htmlFor="urlBrand">{t("brand")}</Label>
+            <Label htmlFor="urlUsedInBatch">{t("usedInBatch")}</Label>
             <Select
-              defaultValue={formData.brand_id}
-              onChange={(value) => setFormData({ ...formData, brand_id: value })}
-              placeholder={t("selectBrand")}
-              options={brands.map((brand) => ({
-                value: brand.id.toString(),
-                label: brand.name,
+              defaultValue={formData.used_in_batch}
+              onChange={(value) => setFormData({ ...formData, used_in_batch: value })}
+              placeholder={t("selectBatch")}
+              options={batches.map((batch) => ({
+                value: batch.id.toString(),
+                label: batch.batch_name,
               }))}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="urlIsActive"
-              type="checkbox"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <Label htmlFor="urlIsActive" className="mb-0">{t("isActive")}</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                id="urlIsActive"
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              <Label htmlFor="urlIsActive" className="mb-0">{t("isActive")}</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="urlCloudflare"
+                type="checkbox"
+                checked={formData.cloudflare_linked}
+                onChange={(e) => setFormData({ ...formData, cloudflare_linked: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              <Label htmlFor="urlCloudflare" className="mb-0">{t("cloudflareLinked")}</Label>
+            </div>
           </div>
           {formError && (
             <div className="rounded-lg bg-error-50 p-3 text-sm text-error-800 dark:bg-error-900/30 dark:text-error-400">
               {formError}
             </div>
           )}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               variant="outline"
               onClick={() => setIsAddModalOpen(false)}
@@ -662,31 +836,33 @@ export default function UrlsPage() {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        className="max-w-[600px] p-6"
+        className="max-w-[700px] p-6"
       >
         <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
           {t("editUrlTitle")}
         </h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="editUrlName">{t("name")} *</Label>
-            <Input
-              id="editUrlName"
-              type="text"
-              placeholder={t("enterName")}
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="editUrlValue">{t("url")} *</Label>
-            <Input
-              id="editUrlValue"
-              type="text"
-              placeholder={t("enterUrl")}
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            />
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="editUrlName">{t("name")} *</Label>
+              <Input
+                id="editUrlName"
+                type="text"
+                placeholder={t("enterName")}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editUrlValue">{t("url")} *</Label>
+              <Input
+                id="editUrlValue"
+                type="text"
+                placeholder={t("enterUrl")}
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="editUrlDescription">{t("description")}</Label>
@@ -698,34 +874,93 @@ export default function UrlsPage() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="editUrlBrand">{t("brand")}</Label>
+              <Select
+                defaultValue={formData.brand_id}
+                onChange={(value) => setFormData({ ...formData, brand_id: value })}
+                placeholder={t("selectBrand")}
+                options={brands.map((brand) => ({
+                  value: brand.id.toString(),
+                  label: brand.name,
+                }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editUrlRegistrar">{t("registrar")}</Label>
+              <Input
+                id="editUrlRegistrar"
+                type="text"
+                placeholder={t("enterRegistrar")}
+                value={formData.registrar}
+                onChange={(e) => setFormData({ ...formData, registrar: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="editUrlDomainDate">{t("domainRegistrationDate")}</Label>
+              <Input
+                id="editUrlDomainDate"
+                type="date"
+                value={formData.domain_registration_date}
+                onChange={(e) => setFormData({ ...formData, domain_registration_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editUrlRegisteredBy">{t("registeredBy")}</Label>
+              <Select
+                defaultValue={formData.registered_by}
+                onChange={(value) => setFormData({ ...formData, registered_by: value })}
+                placeholder={t("selectUser")}
+                options={users.map((user) => ({
+                  value: user.id.toString(),
+                  label: user.username,
+                }))}
+              />
+            </div>
+          </div>
           <div>
-            <Label htmlFor="editUrlBrand">{t("brand")}</Label>
+            <Label htmlFor="editUrlUsedInBatch">{t("usedInBatch")}</Label>
             <Select
-              defaultValue={formData.brand_id}
-              onChange={(value) => setFormData({ ...formData, brand_id: value })}
-              placeholder={t("selectBrand")}
-              options={brands.map((brand) => ({
-                value: brand.id.toString(),
-                label: brand.name,
+              defaultValue={formData.used_in_batch}
+              onChange={(value) => setFormData({ ...formData, used_in_batch: value })}
+              placeholder={t("selectBatch")}
+              options={batches.map((batch) => ({
+                value: batch.id.toString(),
+                label: batch.batch_name,
               }))}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="editUrlIsActive"
-              type="checkbox"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            />
-            <Label htmlFor="editUrlIsActive" className="mb-0">{t("isActive")}</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                id="editUrlIsActive"
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              <Label htmlFor="editUrlIsActive" className="mb-0">{t("isActive")}</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="editUrlCloudflare"
+                type="checkbox"
+                checked={formData.cloudflare_linked}
+                onChange={(e) => setFormData({ ...formData, cloudflare_linked: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              <Label htmlFor="editUrlCloudflare" className="mb-0">{t("cloudflareLinked")}</Label>
+            </div>
           </div>
           {formError && (
             <div className="rounded-lg bg-error-50 p-3 text-sm text-error-800 dark:bg-error-900/30 dark:text-error-400">
               {formError}
             </div>
           )}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               variant="outline"
               onClick={() => setIsEditModalOpen(false)}
@@ -775,6 +1010,152 @@ export default function UrlsPage() {
             {isSubmitting ? t("deleting") : t("delete")}
           </Button>
         </div>
+      </Modal>
+
+      {/* URL Details Modal */}
+      <Modal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        className="max-w-[700px] p-6"
+      >
+        <h3 className="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
+          {t("urlDetails")}
+        </h3>
+        {selectedUrl && (
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Basic Info */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+              <h4 className="mb-3 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+                {t("basicInfo")}
+              </h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("name")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">{selectedUrl.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("status")}</p>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      selectedUrl.is_active
+                        ? "bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-400"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                  >
+                    {selectedUrl.is_active ? t("active") : t("inactive")}
+                  </span>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("url")}</p>
+                  <a
+                    href={selectedUrl.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand-500 hover:underline break-all"
+                  >
+                    {selectedUrl.url}
+                  </a>
+                </div>
+                {selectedUrl.description && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t("description")}</p>
+                    <p className="text-gray-800 dark:text-white">{selectedUrl.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Domain Info */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+              <h4 className="mb-3 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+                {t("domainInfo")}
+              </h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("registrar")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {selectedUrl.registrar || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("domainRegistrationDate")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {selectedUrl.domain_registration_date || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("cloudflareLinked")}</p>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      selectedUrl.cloudflare_linked
+                        ? "bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-400"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                  >
+                    {selectedUrl.cloudflare_linked ? t("yes") : t("no")}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("registeredBy")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {selectedUrl.registeredByUser?.username || "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Association Info */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+              <h4 className="mb-3 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+                {t("associationInfo")}
+              </h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("brand")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {selectedUrl.brand?.name || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("usedInBatch")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {selectedUrl.batch?.batch_name || "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Metadata */}
+            {selectedUrl.created_at && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                <h4 className="mb-3 text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
+                  {t("metadata")}
+                </h4>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("createdAt")}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">
+                    {new Date(selectedUrl.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDetailsModalOpen(false);
+                  openEditModal(selectedUrl);
+                }}
+              >
+                {t("editUrl")}
+              </Button>
+              <Button onClick={() => setIsDetailsModalOpen(false)}>
+                {t("close")}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
