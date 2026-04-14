@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         hostname: "api.mjn-trading.com",
         pathname: "/**",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        pathname: "/**",
+      }
     ],
   },
   
