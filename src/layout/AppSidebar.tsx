@@ -1,13 +1,15 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSidebar } from "../context/SidebarContext";
+import { useAuth } from "../context/AuthContext";
 import {
   BoxCubeIcon,
   ChevronDownIcon,
+  DocsIcon,
   GridIcon,
   HorizontaLDots,
   PlugInIcon,
@@ -20,9 +22,10 @@ type NavItem = {
   icon: React.ReactNode;
   path?: string;
   subItems?: { name: string; nameKey: string; path: string; pro?: boolean; new?: boolean }[];
+  roles?: string[];
 };
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Brands",
@@ -42,6 +45,13 @@ const navItems: NavItem[] = [
     path: "/code-generator",
   },
   {
+    icon: <DocsIcon />,
+    name: "URLs",
+    nameKey: "urls",
+    path: "/urls",
+    roles: ["super_admin"],
+  },
+  {
     icon: <UserCircleIcon />,
     name: "Users",
     nameKey: "users",
@@ -53,8 +63,17 @@ const othersItems: NavItem[] = [];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { user } = useAuth();
   const pathname = usePathname();
   const t = useTranslations("Sidebar");
+
+  // Filter nav items based on user role
+  const navItems = useMemo(() => {
+    return baseNavItems.filter((item) => {
+      if (!item.roles) return true;
+      return user && item.roles.includes(user.role);
+    });
+  }, [user]);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -218,7 +237,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname,isActive]);
+  }, [pathname, isActive, navItems]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened

@@ -54,6 +54,15 @@ interface Brand {
   name: string;
 }
 
+interface BaseUrl {
+  id: number;
+  url: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  brand_id: number | null;
+}
+
 interface BatchItem {
   id: string;
   product_id: number;
@@ -181,6 +190,11 @@ export default function CodeGeneratorPage() {
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
+  // Base URLs
+  const [baseUrls, setBaseUrls] = useState<BaseUrl[]>([]);
+  const [selectedBaseUrl, setSelectedBaseUrl] = useState<string>("");
+  const [loadingBaseUrls, setLoadingBaseUrls] = useState(false);
+
   // Step 3 & Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,12 +226,13 @@ export default function CodeGeneratorPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [batchToDelete, setBatchToDelete] = useState<ApiBatch | null>(null);
 
-  // Fetch products and brands on mount
+  // Fetch products, brands, and base URLs on mount
   useEffect(() => {
     if (token) {
       fetchProducts();
       fetchBrands();
       fetchBatches();
+      fetchBaseUrls();
     }
   }, [token]);
 
@@ -307,6 +322,28 @@ export default function CodeGeneratorPage() {
       }
     } catch (err) {
       console.error("Failed to fetch brands", err);
+    }
+  };
+
+  const fetchBaseUrls = async () => {
+    setLoadingBaseUrls(true);
+    try {
+      const response = await fetch("/api/urls?limit=100", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filter only active URLs
+        const activeUrls = (data.urls || []).filter((u: BaseUrl) => u.is_active);
+        setBaseUrls(activeUrls);
+      }
+    } catch (err) {
+      console.error("Failed to fetch base URLs", err);
+    } finally {
+      setLoadingBaseUrls(false);
     }
   };
 
@@ -554,7 +591,7 @@ export default function CodeGeneratorPage() {
     setError(null);
 
     try {
-      const payload = {
+      const payload: any = {
         batch_name: batchName,
         description: description,
         details: batchItems.map((item) => ({
@@ -563,6 +600,11 @@ export default function CodeGeneratorPage() {
         })),
         brand_id: parseInt(selectedBrandId),
       };
+
+      // Include base_url if selected
+      if (selectedBaseUrl) {
+        payload.base_url = selectedBaseUrl;
+      }
 
       const response = await fetch("/api/batch-generate", {
         method: "POST",
@@ -598,6 +640,7 @@ export default function CodeGeneratorPage() {
       setDescription("");
       setBatchItems([]);
       setSelectedBrandId("");
+      setSelectedBaseUrl("");
       setCurrentStep(1);
       setSuccessMessage(t("batchQueuedSuccess", { jobId: data.jobId }));
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -768,6 +811,27 @@ export default function CodeGeneratorPage() {
                     {t("batchBrandNote", { brandName: brands.find(b => b.id.toString() === selectedBrandId)?.name || "" })}
                   </p>
                 )}
+              </div>
+
+              {/* Base URL Selection */}
+              <div className="mb-6">
+                <Label htmlFor="baseUrlSelect">
+                  {t("selectBaseUrl")} <span className="text-gray-400">({t("optional")})</span>
+                </Label>
+                <div className="max-w-md">
+                  <Select
+                    options={[
+                      { value: "", label: t("useDefaultUrl") },
+                      ...baseUrls.map(u => ({ value: u.url, label: `${u.name} (${u.url})` }))
+                    ]}
+                    placeholder={t("selectBaseUrl")}
+                    onChange={(value) => setSelectedBaseUrl(value)}
+                    defaultValue={selectedBaseUrl}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  {t("baseUrlNote")}
+                </p>
               </div>
 
               {/* Products Section - only show when brand is selected */}
@@ -963,6 +1027,12 @@ export default function CodeGeneratorPage() {
                       <span className="font-medium text-gray-800 dark:text-white">{description}</span>
                     </div>
                   )}
+                  <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">{t("baseUrl")}:</span>
+                    <span className="font-medium text-gray-800 dark:text-white">
+                      {selectedBaseUrl || t("usingDefaultUrl")}
+                    </span>
+                  </div>
                   <div className="flex justify-between border-b border-gray-200 pb-2 dark:border-gray-600">
                     <span className="text-gray-600 dark:text-gray-400">{t("totalProducts")}:</span>
                     <span className="font-medium text-gray-800 dark:text-white">{batchItems.length}</span>
