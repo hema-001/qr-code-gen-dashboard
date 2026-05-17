@@ -1,10 +1,18 @@
 import { NextRequest } from "next/server";
 import { proxyRequest, proxyFormData } from "@/app/api/_lib/proxy";
 
+const ALLOWED_PRODUCT_PARAMS = new Set(["page", "limit", "sort", "order", "brand_id", "search"]);
+
 // GET /api/products — list products (with optional page/limit query params)
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.toString();
+  const sanitized = new URLSearchParams();
+  for (const [key, value] of searchParams.entries()) {
+    if (ALLOWED_PRODUCT_PARAMS.has(key)) {
+      sanitized.set(key, value);
+    }
+  }
+  const query = sanitized.toString();
   const path = `/api/v1/admin/products${query ? `?${query}` : ""}`;
   return proxyRequest(request, path);
 }

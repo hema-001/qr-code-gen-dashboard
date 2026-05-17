@@ -272,6 +272,15 @@ export default function UrlsPage() {
       setFormError(t("urlRequired"));
       return;
     }
+    try {
+      const parsed = new URL(formData.url);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        throw new Error();
+      }
+    } catch {
+      setFormError(t("urlInvalid") || "Please enter a valid URL (https://...)");
+      return;
+    }
 
     setIsSubmitting(true);
     setFormError(null);
@@ -365,6 +374,15 @@ export default function UrlsPage() {
     }
     if (!formData.url.trim()) {
       setFormError(t("urlRequired"));
+      return;
+    }
+    try {
+      const parsed = new URL(formData.url);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        throw new Error();
+      }
+    } catch {
+      setFormError(t("urlInvalid") || "Please enter a valid URL (https://...)");
       return;
     }
 

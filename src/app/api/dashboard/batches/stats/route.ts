@@ -1,10 +1,15 @@
 import { NextRequest } from "next/server";
 import { proxyRequest } from "@/app/api/_lib/proxy";
 
+const ALLOWED_PERIODS = new Set(["7d", "30d", "90d", "1y"]);
+
 // GET /api/dashboard/batches/stats?period=...
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.toString();
+  const sanitized = new URLSearchParams();
+  const period = searchParams.get("period");
+  if (period && ALLOWED_PERIODS.has(period)) sanitized.set("period", period);
+  const query = sanitized.toString();
   const path = `/api/v1/admin/dashboard/batches/stats${query ? `?${query}` : ""}`;
   return proxyRequest(request, path);
 }
