@@ -42,7 +42,11 @@ export default async function proxy(request: NextRequest) {
   }
 
   // If the user is authenticated and trying to access the sign-in page
-  if (isValidToken && pathname.startsWith('/signin')) {
+  const isSignInPath =
+    pathname.startsWith('/signin') ||
+    locales.some(locale => pathname.startsWith(`/${locale}/signin`))
+
+  if (isValidToken && isSignInPath) {
     // Redirect to the dashboard
     return NextResponse.redirect(new URL('/', request.url))
   }

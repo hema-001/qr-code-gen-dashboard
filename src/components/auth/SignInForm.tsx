@@ -3,7 +3,6 @@ import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
-import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "next-intl";
@@ -11,7 +10,6 @@ import * as yup from "yup";
 import LanguageSelector from "@/components/header/LanguageSelector";
 
 export default function SignInForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const t = useTranslations("Auth");
   const [showPassword, setShowPassword] = useState(false);
@@ -62,8 +60,7 @@ export default function SignInForm() {
 
       login(token, user);
 
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } catch (err: any) {
       if (err instanceof yup.ValidationError) {
         const newErrors: { [key: string]: string } = {};
