@@ -8,7 +8,6 @@ import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import FileInput from "@/components/form/input/FileInput";
-import TextArea from "@/components/form/input/TextArea";
 import { Modal } from "@/components/ui/modal";
 import {
   Table,
@@ -30,6 +29,14 @@ import {
 import Label from "@/components/form/Label";
 import Image from "next/image";
 
+interface BrandAttr {
+  id: number;
+  key: string;
+  label: string;
+  data_type: string;
+  required: boolean;
+}
+
 interface Product {
   id: number;
   brand_id: number;
@@ -48,6 +55,16 @@ interface Product {
 interface Brand {
   id: number;
   name: string;
+}
+
+function getSelectOptions(key: string): { value: string; label: string }[] {
+  if (key === "code_type") {
+    return [
+      { value: "box", label: "Box" },
+      { value: "sticker", label: "Sticker" },
+    ];
+  }
+  return [];
 }
 
 export default function ProductsPage() {
@@ -78,36 +95,28 @@ export default function ProductsPage() {
   const [brandId, setBrandId] = useState("");
   const [modelName, setModelName] = useState("");
   const [category, setCategory] = useState("");
-  const [flavor, setFlavor] = useState("");
-  const [mg, setMg] = useState("");
-  const [ml, setMl] = useState("");
-  const [codeType, setCodeType] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper to get the selected brand name (lowercase for comparison)
-  const getSelectedBrandName = () => {
-    const brand = brands.find(b => b.id.toString() === brandId);
-    return brand?.name?.toLowerCase() || "";
-  };
+  // Dynamic attribute state
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
+  const [brandAttributes, setBrandAttributes] = useState<BrandAttr[]>([]);
+  const [loadingAttributes, setLoadingAttributes] = useState(false);
 
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImageError(null);
-    
     if (file) {
       if (file.size > MAX_IMAGE_SIZE) {
         setImageError(t("imageSizeError"));
         setImageFile(null);
-        e.target.value = ""; // Reset the input
+        e.target.value = "";
         return;
       }
-      
-      // Validate file type
       const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
         setImageError(t("imageTypeError"));
@@ -116,7 +125,6 @@ export default function ProductsPage() {
         return;
       }
     }
-    
     setImageFile(file);
   };
 
@@ -135,9 +143,7 @@ export default function ProductsPage() {
   const fetchBrands = async () => {
     try {
       const response = await fetch("/api/brands", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
@@ -148,16 +154,32 @@ export default function ProductsPage() {
     }
   };
 
+  const fetchBrandAttributes = async (id: string) => {
+    setLoadingAttributes(true);
+    try {
+      const response = await fetch(`/api/brands/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBrandAttributes(data.attributes ?? []);
+      } else {
+        setBrandAttributes([]);
+      }
+    } catch {
+      setBrandAttributes([]);
+    } finally {
+      setLoadingAttributes(false);
+    }
+  };
+
   const fetchProducts = async (page: number) => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`/api/products?page=${page}&limit=${limit}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!response.ok) {
         let errorMessage = t("fetchError");
         if (response.status === 401 || response.status === 403) {
@@ -169,7 +191,6 @@ export default function ProductsPage() {
         }
         throw new Error(errorMessage);
       }
-
       const data = await response.json();
       setProducts(data.products);
       setTotalPages(data.totalPages);
@@ -190,20 +211,28 @@ export default function ProductsPage() {
     product.model_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.Brand?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.attributes && JSON.stringify(product.attributes).toLowerCase().includes(searchQuery.toLowerCase())
+    (product.attributes && JSON.stringify(product.attributes).toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const resetForm = () => {
     setBrandId("");
     setModelName("");
     setCategory("");
-    setFlavor("");
-    setMg("");
-    setMl("");
-    setCodeType("");
+    setAttributeValues({});
+    setBrandAttributes([]);
     setImageFile(null);
     setImageError(null);
     setFormError(null);
+  };
+
+  const handleBrandChange = (value: string) => {
+    setBrandId(value);
+    setAttributeValues({});
+    if (value) {
+      fetchBrandAttributes(value);
+    } else {
+      setBrandAttributes([]);
+    }
   };
 
   // Add Product Handlers
@@ -212,64 +241,45 @@ export default function ProductsPage() {
     setIsAddModalOpen(true);
   };
 
-  const handleAddProduct = async () => {
-    const selectedBrandName = getSelectedBrandName();
-    
-    // Validation based on brand
-    if (selectedBrandName === "vgod") {
-      if (!brandId || !flavor.trim() || !ml.trim() || !mg.trim() || !imageFile) {
+  const validateForm = (requireImage: boolean): boolean => {
+    if (!brandId || !modelName.trim() || !category.trim()) {
+      setFormError(t("requiredFields"));
+      return false;
+    }
+    if (requireImage && !imageFile) {
+      setFormError(t("requiredFields"));
+      return false;
+    }
+    for (const attr of brandAttributes) {
+      if (attr.required && !attributeValues[attr.key]?.toString().trim()) {
         setFormError(t("requiredFields"));
-        return;
-      }
-    } else {
-      // Tokyo E-Juice or other brands - require all fields
-      if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType || !imageFile) {
-        setFormError(t("requiredFields"));
-        return;
+        return false;
       }
     }
+    return true;
+  };
+
+  const handleAddProduct = async () => {
+    if (!validateForm(true)) return;
 
     setIsSubmitting(true);
     setFormError(null);
-
     try {
       const formData = new FormData();
       formData.append("brand_id", brandId);
-      
-      // Set model_name and category based on brand
-      if (selectedBrandName === "vgod") {
-        formData.append("model_name", flavor); // Use flavor as model name for VGOD
-        formData.append("category", "E-Liquid"); // Default category for VGOD
-        formData.append("attributes", JSON.stringify({
-          flavor: flavor,
-          ml: ml,
-          mg: mg,
-        }));
-      } else {
-        formData.append("model_name", modelName);
-        formData.append("category", category);
-        formData.append("attributes", JSON.stringify({
-          flavor: flavor,
-          mg: mg,
-          code_type: codeType,
-        }));
-      }
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
+      formData.append("model_name", modelName);
+      formData.append("category", category);
+      formData.append("attributes", JSON.stringify(attributeValues));
+      if (imageFile) formData.append("image", imageFile);
 
       const response = await fetch("/api/products", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log(errorData);
         throw new Error(errorData.message || t("createError"));
       }
 
@@ -286,72 +296,43 @@ export default function ProductsPage() {
   // Edit Product Handlers
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
-    setBrandId(product.brand_id.toString());
+    const id = product.brand_id.toString();
+    setBrandId(id);
     setModelName(product.model_name);
     setCategory(product.category);
-    setFlavor(product.attributes?.flavor || "");
-    setMg(product.attributes?.mg || "");
-    setMl(product.attributes?.ml || "");
-    setCodeType(product.attributes?.code_type || "");
+    // Pre-fill attribute values from existing product data
+    setAttributeValues(
+      typeof product.attributes === "object" && product.attributes !== null
+        ? Object.fromEntries(
+            Object.entries(product.attributes).map(([k, v]) => [k, String(v)])
+          )
+        : {}
+    );
     setImageFile(null);
     setImageError(null);
     setFormError(null);
     setIsEditModalOpen(true);
+    // Fetch brand attributes for dynamic field rendering
+    fetchBrandAttributes(id);
   };
 
   const handleEditProduct = async () => {
     if (!selectedProduct) return;
-    
-    const selectedBrandName = getSelectedBrandName();
-    
-    // Validation based on brand
-    if (selectedBrandName === "vgod") {
-      if (!brandId || !flavor.trim() || !ml.trim() || !mg.trim()) {
-        setFormError(t("requiredFields"));
-        return;
-      }
-    } else {
-      if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType) {
-        setFormError(t("requiredFields"));
-        return;
-      }
-    }
+    if (!validateForm(false)) return;
 
     setIsSubmitting(true);
     setFormError(null);
-
     try {
       const formData = new FormData();
       formData.append("brand_id", brandId);
-      
-      // Set model_name and category based on brand
-      if (selectedBrandName === "vgod") {
-        formData.append("model_name", flavor); // Use flavor as model name for VGOD
-        formData.append("category", "E-Liquid"); // Default category for VGOD
-        formData.append("attributes", JSON.stringify({
-          flavor: flavor,
-          ml: ml,
-          mg: mg,
-        }));
-      } else {
-        formData.append("model_name", modelName);
-        formData.append("category", category);
-        formData.append("attributes", JSON.stringify({
-          flavor: flavor,
-          mg: mg,
-          code_type: codeType,
-        }));
-      }
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
+      formData.append("model_name", modelName);
+      formData.append("category", category);
+      formData.append("attributes", JSON.stringify(attributeValues));
+      if (imageFile) formData.append("image", imageFile);
 
       const response = await fetch(`/api/products/${selectedProduct.id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -379,21 +360,16 @@ export default function ProductsPage() {
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return;
-
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/products/${selectedProduct.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || t("deleteError"));
       }
-
       await fetchProducts(currentPage);
       setIsDeleteModalOpen(false);
       showSuccess(t("productDeletedSuccess"));
@@ -412,11 +388,9 @@ export default function ProductsPage() {
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <Button
@@ -433,15 +407,129 @@ export default function ProductsPage() {
     return buttons;
   };
 
+  const renderDynamicAttributeFields = () => {
+    if (!brandId) return null;
+    if (loadingAttributes) {
+      return <p className="text-sm text-gray-500">{t("loading")}</p>;
+    }
+    if (brandAttributes.length === 0) {
+      return (
+        <p className="text-sm text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          {t("noBrandAttributes")}
+        </p>
+      );
+    }
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        {brandAttributes.map((attr) => (
+          <div key={attr.key}>
+            <Label>
+              {attr.label}
+              {attr.required && <span className="text-error-500 ml-1">*</span>}
+            </Label>
+            {attr.data_type === "boolean" ? (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  id={`attr-${attr.key}`}
+                  checked={attributeValues[attr.key] === "true"}
+                  onChange={(e) =>
+                    setAttributeValues((prev) => ({
+                      ...prev,
+                      [attr.key]: e.target.checked ? "true" : "false",
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                />
+              </div>
+            ) : attr.data_type === "select" ? (
+              <Select
+                options={getSelectOptions(attr.key)}
+                onChange={(value) =>
+                  setAttributeValues((prev) => ({ ...prev, [attr.key]: value }))
+                }
+                defaultValue={attributeValues[attr.key] ?? ""}
+                placeholder={`Select ${attr.label}`}
+              />
+            ) : (
+              <Input
+                type={attr.data_type === "number" ? "number" : "text"}
+                placeholder={attr.label}
+                value={attributeValues[attr.key] ?? ""}
+                onChange={(e) =>
+                  setAttributeValues((prev) => ({ ...prev, [attr.key]: e.target.value }))
+                }
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderProductFormFields = (showImageRequired: boolean) => (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="brandId">{t("brand")} <span className="text-error-500">*</span></Label>
+        <Select
+          options={brandOptions}
+          placeholder={t("selectBrand")}
+          onChange={handleBrandChange}
+          defaultValue={brandId}
+        />
+      </div>
+
+      {brandId && (
+        <>
+          <div>
+            <Label htmlFor="modelName">{t("modelName")} <span className="text-error-500">*</span></Label>
+            <Input
+              id="modelName"
+              type="text"
+              placeholder={t("enterModelName")}
+              value={modelName}
+              onChange={(e) => setModelName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="category">{t("category")} <span className="text-error-500">*</span></Label>
+            <Input
+              id="category"
+              type="text"
+              placeholder={t("enterCategory")}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>
+              {t("imageLabel")}
+              {showImageRequired && <span className="text-error-500 ml-1">*</span>}
+            </Label>
+            <FileInput
+              onChange={handleImageChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+            />
+            {imageError && <p className="mt-1 text-sm text-error-500">{imageError}</p>}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t("imageSizeHint")}</p>
+          </div>
+          {renderDynamicAttributeFields()}
+        </>
+      )}
+
+      {formError && <div className="text-sm text-error-500">{formError}</div>}
+    </div>
+  );
+
   return (
     <div className="container mx-auto py-8">
       <PageBreadcrumb pageTitle={t("title")} />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="w-full sm:w-72 relative">
-            <div className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <Search className="h-5 w-5" />
-            </div>
+          <div className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <Search className="h-5 w-5" />
+          </div>
           <Input
             type="text"
             placeholder={t("searchPlaceholder")}
@@ -484,14 +572,8 @@ export default function ProductsPage() {
                 {t("category")}
               </TableCell>
               <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
-                {t("flavor")}
+                {t("attributes")}
               </TableCell>
-              <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
-                {t("mg")}
-                </TableCell>
-                <TableCell isHeader className="px-6 py-3 text-left rtl:text-right font-medium text-gray-500 dark:text-gray-400">
-                {t("codeType")}
-                </TableCell>
               <TableCell isHeader className="px-6 py-3 text-right rtl:text-left font-medium text-gray-500 dark:text-gray-400">
                 {t("actions")}
               </TableCell>
@@ -500,13 +582,13 @@ export default function ProductsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-7">
+                <TableCell className="px-6 py-4 text-center text-gray-500">
                   {t("loading")}
                 </TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell className="px-6 py-4 text-center text-gray-500 col-span-7">
+                <TableCell className="px-6 py-4 text-center text-gray-500">
                   {t("noProductsFound")}
                 </TableCell>
               </TableRow>
@@ -518,18 +600,18 @@ export default function ProductsPage() {
                 >
                   <TableCell className="px-6 py-4">
                     {product.image_url ? (
-                        <div className="h-12 w-12 relative rounded-lg overflow-hidden">
-                            <Image 
-                                src={product.image_url} 
-                                alt={product.model_name} 
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
+                      <div className="h-12 w-12 relative rounded-lg overflow-hidden">
+                        <Image
+                          src={product.image_url}
+                          alt={product.model_name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
-                        <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                            {t("noImage")}
-                        </div>
+                      <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
+                        {t("noImage")}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
@@ -541,14 +623,12 @@ export default function ProductsPage() {
                   <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
                     {product.category}
                   </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
-                    {product.attributes?.flavor || "-"}
-                  </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
-                    {product.attributes?.mg || "-"}
-                  </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-800 dark:text-white/90">
-                    {product.attributes?.code_type || "-"}
+                  <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-400 text-sm">
+                    {product.attributes
+                      ? Object.entries(product.attributes)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(", ")
+                      : "—"}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right rtl:text-left">
                     <div className="flex items-center justify-end rtl:justify-start gap-2">
@@ -576,369 +656,74 @@ export default function ProductsPage() {
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Pagination Controls */}
       <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-gray-500">
-            {t("showing")} {(currentPage - 1) * limit + 1} {t("to")} {Math.min(currentPage * limit, totalItems)} {t("of")} {totalItems} {t("entries")}
+          {t("showing")} {(currentPage - 1) * limit + 1} {t("to")} {Math.min(currentPage * limit, totalItems)} {t("of")} {totalItems} {t("entries")}
         </div>
         <div className="flex items-center gap-2">
-            <Button 
-                variant="outline" 
-                size="sm"
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(1)}
-                aria-label={t("firstPage")}
-                className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
-            >
-                <ChevronsLeftIcon className="w-5 h-5 rtl:rotate-180" />
-            </Button>
-            <Button 
-                variant="outline" 
-                size="sm"
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                aria-label={t("previousPage")}
-                className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
-            >
-                <ChevronLeftIcon className="w-5 h-5 rtl:rotate-180" />
-            </Button>
-            
-            <div className="flex gap-1">
-              {renderPaginationButtons()}
-            </div>
-
-            <Button 
-                variant="outline" 
-                size="sm"
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                aria-label={t("nextPage")}
-                className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
-            >
-                <ChevronRightIcon className="w-5 h-5 rtl:rotate-180" />
-            </Button>
-            <Button 
-                variant="outline" 
-                size="sm"
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(totalPages)}
-                aria-label={t("lastPage")}
-                className="w-8 h-8 pl-0 pr-0 pb-0 pt-0"
-            >
-                <ChevronsRightIcon className="w-5 h-5 rtl:rotate-180" />
-            </Button>
+          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(1)} aria-label={t("firstPage")} className="w-8 h-8 pl-0 pr-0 pb-0 pt-0">
+            <ChevronsLeftIcon className="w-5 h-5 rtl:rotate-180" />
+          </Button>
+          <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} aria-label={t("previousPage")} className="w-8 h-8 pl-0 pr-0 pb-0 pt-0">
+            <ChevronLeftIcon className="w-5 h-5 rtl:rotate-180" />
+          </Button>
+          <div className="flex gap-1">{renderPaginationButtons()}</div>
+          <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} aria-label={t("nextPage")} className="w-8 h-8 pl-0 pr-0 pb-0 pt-0">
+            <ChevronRightIcon className="w-5 h-5 rtl:rotate-180" />
+          </Button>
+          <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)} aria-label={t("lastPage")} className="w-8 h-8 pl-0 pr-0 pb-0 pt-0">
+            <ChevronsRightIcon className="w-5 h-5 rtl:rotate-180" />
+          </Button>
         </div>
       </div>
 
       {/* Add Product Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        className="max-w-[600px] p-6"
-      >
-        <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          {t("addNewProduct")}
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="brandId">{t("brand")} <span className="text-error-500">*</span></Label>
-            <Select
-              options={brandOptions}
-              placeholder={t("selectBrand")}
-              onChange={(value) => setBrandId(value)}
-              defaultValue={brandId}
-            />
-          </div>
-          
-          {/* Tokyo E-Juice fields (default) */}
-          {getSelectedBrandName() !== "vgod" && brandId && (
-            <>
-              <div>
-                <Label htmlFor="modelName">{t("modelName")} <span className="text-error-500">*</span></Label>
-                <Input
-                  id="modelName"
-                  type="text"
-                  placeholder={t("enterModelName")}
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="category">{t("category")} <span className="text-error-500">*</span></Label>
-                <Input
-                  id="category"
-                  type="text"
-                  placeholder={t("enterCategory")}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-          
-          {/* Common fields - show when brand is selected */}
-          {brandId && (
-            <>
-              <div>
-                <Label htmlFor="image">{t("imageLabel")} <span className="text-error-500">*</span></Label>
-                <FileInput
-                  onChange={handleImageChange}
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                />
-                {imageError && (
-                  <p className="mt-1 text-sm text-error-500">{imageError}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t("imageSizeHint")}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="flavor">{t("flavor")} <span className="text-error-500">*</span></Label>
-                  <Input
-                    id="flavor"
-                    type="text"
-                    placeholder={t("enterFlavor")}
-                    value={flavor}
-                    onChange={(e) => setFlavor(e.target.value)}
-                  />
-                </div>
-                
-                {/* ML field for VGOD only */}
-                {getSelectedBrandName() === "vgod" && (
-                  <div>
-                    <Label htmlFor="ml">{t("ml")} <span className="text-error-500">*</span></Label>
-                    <Input
-                      id="ml"
-                      type="number"
-                      placeholder={t("enterMl")}
-                      value={ml}
-                      onChange={(e) => setMl(e.target.value)}
-                    />
-                  </div>
-                )}
-                
-                <div>
-                  <Label htmlFor="mg">{t("mg")} <span className="text-error-500">*</span></Label>
-                  <Input
-                    id="mg"
-                    type="number"
-                    placeholder={t("enterMg")}
-                    value={mg}
-                    onChange={(e) => setMg(e.target.value)}
-                  />
-                </div>
-                
-                {/* Code Type for Tokyo E-Juice only */}
-                {getSelectedBrandName() !== "vgod" && (
-                  <div>
-                    <Label htmlFor="codeType">{t("codeType")} <span className="text-error-500">*</span></Label>
-                    <Select
-                      options={[
-                        { value: "box", label: t("codeTypeBox") },
-                        { value: "sticker", label: t("codeTypeSticker") },
-                        { value: "cap", label: t("codeTypeCap") },
-                      ]}
-                      placeholder={t("selectCodeType")}
-                      onChange={(value) => setCodeType(value)}
-                      defaultValue={codeType}
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-          
-          {formError && (
-            <div className="text-sm text-error-500">{formError}</div>
-          )}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsAddModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleAddProduct} disabled={isSubmitting || !brandId}>
-              {isSubmitting ? t("adding") : t("addProduct")}
-            </Button>
-          </div>
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} className="max-w-[600px] p-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">{t("addNewProduct")}</h3>
+        {renderProductFormFields(true)}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="outline" onClick={() => setIsAddModalOpen(false)} disabled={isSubmitting}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleAddProduct} disabled={isSubmitting || !brandId}>
+            {isSubmitting ? t("adding") : t("addProduct")}
+          </Button>
         </div>
       </Modal>
 
       {/* Edit Product Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        className="max-w-[600px] p-6"
-      >
-        <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-          {t("editProductTitle")}
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="editBrandId">{t("brand")} <span className="text-error-500">*</span></Label>
-            <Select
-              options={brandOptions}
-              placeholder={t("selectBrand")}
-              onChange={(value) => setBrandId(value)}
-              defaultValue={brandId}
-            />
-          </div>
-          
-          {/* Tokyo E-Juice fields (default) */}
-          {getSelectedBrandName() !== "vgod" && brandId && (
-            <>
-              <div>
-                <Label htmlFor="editModelName">{t("modelName")} <span className="text-error-500">*</span></Label>
-                <Input
-                  id="editModelName"
-                  type="text"
-                  placeholder={t("enterModelName")}
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="editCategory">{t("category")} <span className="text-error-500">*</span></Label>
-                <Input
-                  id="editCategory"
-                  type="text"
-                  placeholder={t("enterCategory")}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-          
-          {/* Common fields - show when brand is selected */}
-          {brandId && (
-            <>
-              <div>
-                <Label htmlFor="editImage">{t("imageKeepCurrent")}</Label>
-                <FileInput
-                  onChange={handleImageChange}
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                />
-                {imageError && (
-                  <p className="mt-1 text-sm text-error-500">{imageError}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t("imageSizeHint")}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="editFlavor">{t("flavor")} <span className="text-error-500">*</span></Label>
-                  <Input
-                    id="editFlavor"
-                    type="text"
-                    placeholder={t("enterFlavor")}
-                    value={flavor}
-                    onChange={(e) => setFlavor(e.target.value)}
-                  />
-                </div>
-                
-                {/* ML field for VGOD only */}
-                {getSelectedBrandName() === "vgod" && (
-                  <div>
-                    <Label htmlFor="editMl">{t("ml")} <span className="text-error-500">*</span></Label>
-                    <Input
-                      id="editMl"
-                      type="number"
-                      placeholder={t("enterMl")}
-                      value={ml}
-                      onChange={(e) => setMl(e.target.value)}
-                    />
-                  </div>
-                )}
-                
-                <div>
-                  <Label htmlFor="editMg">{t("mg")} <span className="text-error-500">*</span></Label>
-                  <Input
-                    id="editMg"
-                    type="number"
-                    placeholder={t("enterMg")}
-                    value={mg}
-                    onChange={(e) => setMg(e.target.value)}
-                  />
-                </div>
-                
-                {/* Code Type for Tokyo E-Juice only */}
-                {getSelectedBrandName() !== "vgod" && (
-                  <div>
-                    <Label htmlFor="editCodeType">{t("codeType")} <span className="text-error-500">*</span></Label>
-                    <Select
-                      options={[
-                        { value: "box", label: t("codeTypeBox") },
-                        { value: "sticker", label: t("codeTypeSticker") },
-                        { value: "cap", label: t("codeTypeCap") },
-                      ]}
-                      placeholder={t("selectCodeType")}
-                      onChange={(value) => setCodeType(value)}
-                      defaultValue={codeType}
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {formError && (
-            <div className="text-sm text-error-500">{formError}</div>
-          )}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleEditProduct} disabled={isSubmitting}>
-              {isSubmitting ? t("saving") : t("save")}
-            </Button>
-          </div>
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="max-w-[600px] p-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">{t("editProductTitle")}</h3>
+        {renderProductFormFields(false)}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={handleEditProduct} disabled={isSubmitting}>
+            {isSubmitting ? t("saving") : t("save")}
+          </Button>
         </div>
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        className="max-w-[500px] p-6"
-      >
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="max-w-[500px] p-6">
         <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error-50 text-error-500 dark:bg-error-900/30 dark:text-error-400">
-                <TrashBinIcon className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                {t("deleteProductTitle")}
-            </h3>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error-50 text-error-500 dark:bg-error-900/30 dark:text-error-400">
+            <TrashBinIcon className="h-6 w-6" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{t("deleteProductTitle")}</h3>
         </div>
-        
         <p className="mb-6 text-gray-500 dark:text-gray-400">
-          {t("deleteConfirmation")} <strong>{selectedProduct?.attributes.flavor} - {selectedProduct?.attributes.mg}MG - {selectedProduct?.attributes.code_type}</strong>? <br />
+          {t("deleteConfirmation")} <strong>{selectedProduct?.model_name}</strong>?{" "}
           {t("deleteWarning")}
         </p>
         <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsDeleteModalOpen(false)}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} disabled={isSubmitting}>
             {t("cancel")}
           </Button>
-          <Button
-            onClick={handleDeleteProduct}
-            disabled={isSubmitting}
-            className="bg-error-600 hover:bg-error-700 text-white"
-          >
+          <Button onClick={handleDeleteProduct} disabled={isSubmitting} className="bg-error-600 hover:bg-error-700 text-white">
             {isSubmitting ? t("deleting") : t("delete")}
           </Button>
         </div>
