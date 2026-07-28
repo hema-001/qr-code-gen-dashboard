@@ -264,7 +264,9 @@
     "deleteError": "Failed to delete product.",
     "unauthorizedError": "You are not authorized to {action} products. Please sign in again.",
     "notFoundError": "The product resource could not be found.",
-    "serverError": "A server error occurred while {action} the product. Please try again later."
+    "serverError": "A server error occurred while {action} the product. Please try again later.",
+    "color": "Color",
+    "enterColor": "Enter color"
   },
   "CodeGenerator": {
     "title": "Code Generator",

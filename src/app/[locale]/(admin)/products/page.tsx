@@ -75,6 +75,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Form State
+  const [color, setColor] = useState("");
   const [brandId, setBrandId] = useState("");
   const [modelName, setModelName] = useState("");
   const [category, setCategory] = useState("");
@@ -221,7 +222,13 @@ export default function ProductsPage() {
         setFormError(t("requiredFields"));
         return;
       }
-    } else {
+    } else if (selectedBrandName === "Permablends") {
+      if (!brandId || !modelName.trim() || !category.trim() || !color.trim() || !imageFile) {
+        setFormError(t("requiredFields"));
+        return;
+      }
+    } 
+    else {
       // Tokyo E-Juice or other brands - require all fields
       if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType || !imageFile) {
         setFormError(t("requiredFields"));
@@ -245,7 +252,14 @@ export default function ProductsPage() {
           ml: ml,
           mg: mg,
         }));
-      } else {
+      } else if (selectedBrandName === "Permablends") {
+        formData.append("model_name", modelName);
+        formData.append("category", category);
+        formData.append("attributes", JSON.stringify({
+          color: color,
+        }));
+      }
+      else {
         formData.append("model_name", modelName);
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
@@ -286,6 +300,7 @@ export default function ProductsPage() {
   // Edit Product Handlers
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
+    setColor(product.attributes?.color || "");
     setBrandId(product.brand_id.toString());
     setModelName(product.model_name);
     setCategory(product.category);
@@ -310,7 +325,13 @@ export default function ProductsPage() {
         setFormError(t("requiredFields"));
         return;
       }
-    } else {
+    } else if (selectedBrandName === "Permablends") {
+      if (!brandId || !modelName.trim() || !category.trim() || !color.trim()) {
+        setFormError(t("requiredFields"));
+        return;
+      }
+    }
+    else {
       if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType) {
         setFormError(t("requiredFields"));
         return;
@@ -333,7 +354,14 @@ export default function ProductsPage() {
           ml: ml,
           mg: mg,
         }));
-      } else {
+      } else if (selectedBrandName === "Permablends") {
+        formData.append("model_name", modelName);
+        formData.append("category", category);
+        formData.append("attributes", JSON.stringify({
+          color: color,
+        }));
+      }
+      else {
         formData.append("model_name", modelName);
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
@@ -651,8 +679,8 @@ export default function ProductsPage() {
             />
           </div>
           
-          {/* Tokyo E-Juice fields (default) */}
-          {getSelectedBrandName() !== "vgod" && brandId && (
+          {/* default fields */}
+          {/* {getSelectedBrandName() !== "vgod" && brandId && ( */}
             <>
               <div>
                 <Label htmlFor="modelName">{t("modelName")} <span className="text-error-500">*</span></Label>
@@ -675,6 +703,20 @@ export default function ProductsPage() {
                 />
               </div>
             </>
+          {/* )} */}
+
+          {/* Permablends fields */}
+          {getSelectedBrandName() === "permablends" && brandId && (
+            <div>
+              <Label htmlFor="color">{t("color")} <span className="text-error-500">*</span></Label>
+              <Input
+                id="color"
+                type="text"
+                placeholder={t("enterColor")}
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+              />
+            </div>
           )}
           
           {/* Common fields - show when brand is selected */}
@@ -694,16 +736,6 @@ export default function ProductsPage() {
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="flavor">{t("flavor")} <span className="text-error-500">*</span></Label>
-                  <Input
-                    id="flavor"
-                    type="text"
-                    placeholder={t("enterFlavor")}
-                    value={flavor}
-                    onChange={(e) => setFlavor(e.target.value)}
-                  />
-                </div>
                 
                 {/* ML field for VGOD only */}
                 {getSelectedBrandName() === "vgod" && (
@@ -716,10 +748,14 @@ export default function ProductsPage() {
                       value={ml}
                       onChange={(e) => setMl(e.target.value)}
                     />
-                  </div>
-                )}
-                
-                <div>
+                  <Label htmlFor="flavor">{t("flavor")} <span className="text-error-500">*</span></Label>
+                  <Input
+                    id="flavor"
+                    type="text"
+                    placeholder={t("enterFlavor")}
+                    value={flavor}
+                    onChange={(e) => setFlavor(e.target.value)}
+                  />
                   <Label htmlFor="mg">{t("mg")} <span className="text-error-500">*</span></Label>
                   <Input
                     id="mg"
@@ -728,10 +764,10 @@ export default function ProductsPage() {
                     value={mg}
                     onChange={(e) => setMg(e.target.value)}
                   />
-                </div>
-                
+                  </div>
+                )}
                 {/* Code Type for Tokyo E-Juice only */}
-                {getSelectedBrandName() !== "vgod" && (
+                {getSelectedBrandName() === "tokyoejuice" && (
                   <div>
                     <Label htmlFor="codeType">{t("codeType")} <span className="text-error-500">*</span></Label>
                     <Select
@@ -744,6 +780,22 @@ export default function ProductsPage() {
                       onChange={(value) => setCodeType(value)}
                       defaultValue={codeType}
                     />
+                                      <Label htmlFor="flavor">{t("flavor")} <span className="text-error-500">*</span></Label>
+                  <Input
+                    id="flavor"
+                    type="text"
+                    placeholder={t("enterFlavor")}
+                    value={flavor}
+                    onChange={(e) => setFlavor(e.target.value)}
+                  />
+                  <Label htmlFor="mg">{t("mg")} <span className="text-error-500">*</span></Label>
+                  <Input
+                    id="mg"
+                    type="number"
+                    placeholder={t("enterMg")}
+                    value={mg}
+                    onChange={(e) => setMg(e.target.value)}
+                  />
                   </div>
                 )}
               </div>
