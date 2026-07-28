@@ -1,15 +1,6 @@
 import { NextRequest } from "next/server";
 import { proxyRequest } from "@/app/api/_lib/proxy";
 
-// GET /api/brands/[id] — get a single brand with manager and attributes
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  return proxyRequest(request, `/api/v1/admin/brands/${id}`);
-}
-
 // PUT /api/brands/[id] — update a brand
 // DELETE /api/brands/[id] — delete a brand
 export async function PUT(

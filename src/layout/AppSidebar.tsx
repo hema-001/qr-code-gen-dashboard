@@ -12,7 +12,6 @@ import {
   DocsIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
   PlugInIcon,
   UserCircleIcon,
 } from "../icons/index";
@@ -57,13 +56,6 @@ const baseNavItems: NavItem[] = [
     name: "Users",
     nameKey: "users",
     path: "/users",
-  },
-  {
-    icon: <ListIcon />,
-    name: "Attribute Types",
-    nameKey: "attributeTypes",
-    path: "/attribute-types",
-    roles: ["super_admin"],
   },
 ];
 
