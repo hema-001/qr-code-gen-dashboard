@@ -214,21 +214,27 @@ export default function ProductsPage() {
   };
 
   const handleAddProduct = async () => {
+    console.log("HandleAddProduct called");
     const selectedBrandName = getSelectedBrandName();
     
+    console.log("Selected Brand Name:", selectedBrandName);
     // Validation based on brand
     if (selectedBrandName === "vgod") {
+      console.log("Validating VGOD fields");
       if (!brandId || !flavor.trim() || !ml.trim() || !mg.trim() || !imageFile) {
         setFormError(t("requiredFields"));
         return;
       }
-    } else if (selectedBrandName === "Permablends") {
+    }
+    if (selectedBrandName === "permablends") {
+      console.log("Validating Permablends fields");
       if (!brandId || !modelName.trim() || !category.trim() || !color.trim() || !imageFile) {
         setFormError(t("requiredFields"));
         return;
       }
     } 
-    else {
+    if (selectedBrandName === "tokyoejuice") {
+      console.log("Validating Tokyo E-Juice fields");
       // Tokyo E-Juice or other brands - require all fields
       if (!brandId || !modelName.trim() || !category.trim() || !flavor.trim() || !mg.trim() || !codeType || !imageFile) {
         setFormError(t("requiredFields"));
@@ -236,15 +242,18 @@ export default function ProductsPage() {
       }
     }
 
+    console.log("Form validation passed, preparing to submit");
     setIsSubmitting(true);
     setFormError(null);
 
     try {
+      console.log("Submitting product with brand:", selectedBrandName);
       const formData = new FormData();
       formData.append("brand_id", brandId);
       
       // Set model_name and category based on brand
       if (selectedBrandName === "vgod") {
+        console.log("Preparing form data for VGOD");
         formData.append("model_name", flavor); // Use flavor as model name for VGOD
         formData.append("category", "E-Liquid"); // Default category for VGOD
         formData.append("attributes", JSON.stringify({
@@ -252,7 +261,8 @@ export default function ProductsPage() {
           ml: ml,
           mg: mg,
         }));
-      } else if (selectedBrandName === "Permablends") {
+      } else if (selectedBrandName === "permablends") {
+        console.log("Preparing form data for Permablends");
         formData.append("model_name", modelName);
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
@@ -260,6 +270,7 @@ export default function ProductsPage() {
         }));
       }
       else {
+        console.log("Preparing form data for Tokyo E-Juice or other brands");
         formData.append("model_name", modelName);
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
@@ -270,9 +281,11 @@ export default function ProductsPage() {
       }
 
       if (imageFile) {
+        console.log("Appending image file to form data:", imageFile.name);
         formData.append("image", imageFile);
       }
 
+      console.log("Sending POST request to /api/products");
       const response = await fetch("/api/products", {
         method: "POST",
         headers: {
@@ -283,14 +296,16 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log(errorData);
+        console.log("Error response from server:", errorData);
         throw new Error(errorData.message || t("createError"));
       }
 
+      console.log("Product created successfully, refreshing product list");
       await fetchProducts(currentPage);
       setIsAddModalOpen(false);
       showSuccess(t("productCreatedSuccess"));
     } catch (err: any) {
+      console.error("Error while adding product:", err);
       setFormError(err.message);
     } finally {
       setIsSubmitting(false);
@@ -325,7 +340,7 @@ export default function ProductsPage() {
         setFormError(t("requiredFields"));
         return;
       }
-    } else if (selectedBrandName === "Permablends") {
+    } else if (selectedBrandName === "permablends") {
       if (!brandId || !modelName.trim() || !category.trim() || !color.trim()) {
         setFormError(t("requiredFields"));
         return;
@@ -354,7 +369,7 @@ export default function ProductsPage() {
           ml: ml,
           mg: mg,
         }));
-      } else if (selectedBrandName === "Permablends") {
+      } else if (selectedBrandName === "permablends") {
         formData.append("model_name", modelName);
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
@@ -705,7 +720,7 @@ export default function ProductsPage() {
             </>
           {/* )} */}
 
-          {/* Permablends fields */}
+          {/* permablends fields */}
           {getSelectedBrandName() === "permablends" && brandId && (
             <div>
               <Label htmlFor="color">{t("color")} <span className="text-error-500">*</span></Label>

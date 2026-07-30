@@ -373,7 +373,8 @@
     "useDefaultUrl": "Use default server URL",
     "baseUrlNote": "The base URL will be used to construct the QR code verification links. If not selected, the server default will be used.",
     "baseUrl": "Base URL",
-    "usingDefaultUrl": "Using default server URL"
+    "usingDefaultUrl": "Using default server URL",
+    "color": "Color"
   },
   "Users": {
     "title": "Users",
