@@ -264,7 +264,9 @@
     "deleteError": "删除产品失败。",
     "unauthorizedError": "您无权{action}产品。请重新登录。",
     "notFoundError": "找不到产品资源。",
-    "serverError": "{action}产品时发生服务器错误。请稍后重试。"
+    "serverError": "{action}产品时发生服务器错误。请稍后重试。",
+    "color": "颜色",
+    "enterColor": "颜色名字"
   },
   "CodeGenerator": {
     "title": "代码生成器",
@@ -371,7 +373,8 @@
     "useDefaultUrl": "使用默认服务器网址",
     "baseUrlNote": "基础网址将用于构建二维码验证链接。如未选择，将使用服务器默认网址。",
     "baseUrl": "基础网址",
-    "usingDefaultUrl": "使用默认服务器网址"
+    "usingDefaultUrl": "使用默认服务器网址",
+    "color": "颜色"
   },
   "Users": {
     "title": "用户",

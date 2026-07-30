@@ -42,6 +42,7 @@ interface Product {
     mg?: string;
     ml?: string;
     code_type?: string;
+    color?: string;
   };
   Brand?: {
     id: number;
@@ -673,19 +674,68 @@ export default function CodeGeneratorPage() {
     ? products.filter(p => p.brand_id.toString() === selectedBrandId)
     : [];
 
-  // Product options for dropdown - filtered by brand
-  const productOptions = filteredProducts.map((p) => {
-    const brandName = getSelectedBrandName();
-    // Different label format based on brand
-    if (brandName === "vgod") {
-      return {
-        value: p.id.toString(),
-        label: `${p.attributes?.flavor || "N/A"} - ${p.attributes?.ml || "N/A"}ML - ${p.attributes?.mg || "N/A"}MG`,
-      };
+  // --- Single source of truth for which attribute columns each brand shows ---
+  // VGOD: flavor, ml, mg
+  // tokoyejuice: code_type, flavor, mg
+  // permablends: color only
+  type ColumnKey = "flavor" | "ml" | "mg" | "codeType" | "color";
+
+  const getBrandColumns = (brandName: string): ColumnKey[] => {
+    switch (brandName) {
+      case "vgod":
+        return ["flavor", "ml", "mg"];
+      case "tokoyejuice":
+        return ["codeType", "flavor", "mg"];
+      case "permablends":
+        return ["color"];
+      default:
+        return ["codeType", "flavor", "mg"];
     }
+  };
+
+  const columnLabels: Record<ColumnKey, string> = {
+    flavor: t("flavor"),
+    ml: t("ml"),
+    mg: t("mg"),
+    codeType: t("codeType"),
+    color: t("color"),
+  };
+
+  const getColumnValue = (
+    product: Product | undefined,
+    col: ColumnKey,
+    fallback: string = "-"
+  ): string => {
+    switch (col) {
+      case "flavor":
+        return product?.attributes?.flavor || fallback;
+      case "ml":
+        return product?.attributes?.ml || fallback;
+      case "mg":
+        return product?.attributes?.mg || fallback;
+      case "codeType":
+        return product?.attributes?.code_type || fallback;
+      case "color":
+        return product?.attributes?.color || fallback;
+      default:
+        return fallback;
+    }
+  };
+
+  // Columns for the currently selected brand (used by header, body rows, and dropdown labels)
+  const selectedBrandColumns = getBrandColumns(getSelectedBrandName());
+
+  // Product options for dropdown - filtered by brand, label built from that brand's columns
+  const productOptions = filteredProducts.map((p) => {
+    const label = selectedBrandColumns
+      .map((col) => {
+        const value = getColumnValue(p, col, "N/A");
+        return col === "ml" ? `${value}ML` : col === "mg" ? `${value}MG` : value;
+      })
+      .join(" - ");
     return {
       value: p.id.toString(),
-      label: `${p.attributes?.flavor || "N/A"} - ${p.attributes?.mg || "N/A"}MG - ${p.attributes?.code_type || "N/A"}`,
+      label: label || p.model_name,
     };
   });
 
@@ -867,34 +917,16 @@ export default function CodeGeneratorPage() {
                             >
                               {t("product")}
                             </TableCell>
-                            <TableCell
-                              isHeader
-                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                            >
-                              {t("flavor")}
-                            </TableCell>
-                            {/* Show ML for VGOD, Code Type for others */}
-                            {getSelectedBrandName() === "vgod" ? (
+                            {/* Attribute columns driven by selectedBrandColumns - stays in sync with body rows */}
+                            {selectedBrandColumns.map((col) => (
                               <TableCell
+                                key={col}
                                 isHeader
                                 className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
                               >
-                                {t("ml")}
+                                {columnLabels[col]}
                               </TableCell>
-                            ) : (
-                              <TableCell
-                                isHeader
-                                className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                              >
-                                {t("codeType")}
-                              </TableCell>
-                            )}
-                            <TableCell
-                              isHeader
-                              className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
-                            >
-                              {t("mg")}
-                            </TableCell>
+                            ))}
                             <TableCell
                               isHeader
                               className="px-4 py-3 text-left rtl:text-right text-sm font-medium text-gray-500 dark:text-gray-400"
@@ -931,22 +963,14 @@ export default function CodeGeneratorPage() {
                                   className="min-w-[200px]"
                                 />
                               </TableCell>
-                              <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                {item.product?.attributes?.flavor || "-"}
-                              </TableCell>
-                              {/* Show ML for VGOD, Code Type for others */}
-                              {getSelectedBrandName() === "vgod" ? (
-                                <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                  {item.product?.attributes?.ml || "-"}
+                              {selectedBrandColumns.map((col) => (
+                                <TableCell
+                                  key={col}
+                                  className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+                                >
+                                  {getColumnValue(item.product, col)}
                                 </TableCell>
-                              ) : (
-                                <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                  {item.product?.attributes?.code_type || "-"}
-                                </TableCell>
-                              )}
-                              <TableCell className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                {item.product?.attributes?.mg || "-"}
-                              </TableCell>
+                              ))}
                               <TableCell className="px-4 py-3">
                                 <Input
                                   type="number"
@@ -1063,11 +1087,9 @@ export default function CodeGeneratorPage() {
                             {item.product?.attributes?.flavor || item.product?.model_name || t("unknownProduct")}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {getSelectedBrandName() === "vgod" ? (
-                              <>{t("ml")}: {item.product?.attributes?.ml || "N/A"} | {t("mg")}: {item.product?.attributes?.mg || "N/A"}</>
-                            ) : (
-                              <>{t("mg")}: {item.product?.attributes?.mg || "N/A"} | {t("codeType")}: {item.product?.attributes?.code_type || "N/A"}</>
-                            )}
+                            {selectedBrandColumns
+                              .map((col) => `${columnLabels[col]}: ${getColumnValue(item.product, col, "N/A")}`)
+                              .join(" | ")}
                           </p>
                         </div>
                       </div>
