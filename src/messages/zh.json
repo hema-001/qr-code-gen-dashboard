@@ -266,7 +266,9 @@
     "notFoundError": "找不到产品资源。",
     "serverError": "{action}产品时发生服务器错误。请稍后重试。",
     "color": "颜色",
-    "enterColor": "颜色名字"
+    "enterColor": "颜色名字",
+    "enterProductType": "产品类型",
+    "productType": "产品类型"
   },
   "CodeGenerator": {
     "title": "代码生成器",
@@ -374,7 +376,8 @@
     "baseUrlNote": "基础网址将用于构建二维码验证链接。如未选择，将使用服务器默认网址。",
     "baseUrl": "基础网址",
     "usingDefaultUrl": "使用默认服务器网址",
-    "color": "颜色"
+    "color": "颜色",
+    "productType": "产品类型"
   },
   "Users": {
     "title": "用户",

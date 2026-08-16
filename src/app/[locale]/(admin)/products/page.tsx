@@ -8,7 +8,6 @@ import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
 import FileInput from "@/components/form/input/FileInput";
-import TextArea from "@/components/form/input/TextArea";
 import { Modal } from "@/components/ui/modal";
 import {
   Table,
@@ -75,6 +74,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Form State
+  const [productType, setProductType] = useState("");
   const [color, setColor] = useState("");
   const [brandId, setBrandId] = useState("");
   const [modelName, setModelName] = useState("");
@@ -201,6 +201,8 @@ export default function ProductsPage() {
     setFlavor("");
     setMg("");
     setMl("");
+    setColor("");
+    setProductType("");
     setCodeType("");
     setImageFile(null);
     setImageError(null);
@@ -233,6 +235,13 @@ export default function ProductsPage() {
         return;
       }
     } 
+    if (selectedBrandName === "dynamiccolor") {
+      console.log("Validating DynamicColor fields");
+      if (!brandId || !modelName.trim() || !category.trim() || !color.trim() || !productType.trim() || !imageFile) {
+        setFormError(t("requiredFields"));
+        return;
+      }
+    }
     if (selectedBrandName === "tokyoejuice") {
       console.log("Validating Tokyo E-Juice fields");
       // Tokyo E-Juice or other brands - require all fields
@@ -267,6 +276,15 @@ export default function ProductsPage() {
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
           color: color,
+        }));
+      }
+      else if (selectedBrandName === "dynamiccolor") {
+        console.log("Preparing form data for DynamicColor");
+        formData.append("model_name", modelName);
+        formData.append("category", category);
+        formData.append("attributes", JSON.stringify({
+          color: color,
+          product_type: productType,
         }));
       }
       else {
@@ -316,6 +334,7 @@ export default function ProductsPage() {
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
     setColor(product.attributes?.color || "");
+    setProductType(product.attributes?.product_type || "");
     setBrandId(product.brand_id.toString());
     setModelName(product.model_name);
     setCategory(product.category);
@@ -342,6 +361,12 @@ export default function ProductsPage() {
       }
     } else if (selectedBrandName === "permablends") {
       if (!brandId || !modelName.trim() || !category.trim() || !color.trim()) {
+        setFormError(t("requiredFields"));
+        return;
+      }
+    }
+    else if (selectedBrandName === "dynamiccolor") {
+      if (!brandId || !modelName.trim() || !category.trim() || !color.trim() || !productType.trim()) {
         setFormError(t("requiredFields"));
         return;
       }
@@ -374,6 +399,13 @@ export default function ProductsPage() {
         formData.append("category", category);
         formData.append("attributes", JSON.stringify({
           color: color,
+        }));
+      } else if (selectedBrandName === "dynamiccolor") {
+        formData.append("model_name", modelName);
+        formData.append("category", category);
+        formData.append("attributes", JSON.stringify({
+          color: color,
+          product_type: productType,
         }));
       }
       else {
@@ -733,7 +765,28 @@ export default function ProductsPage() {
               />
             </div>
           )}
-          
+
+          {/* dynamiccolor fields */}
+          {getSelectedBrandName() === "dynamiccolor" && brandId && (
+            <div>
+              <Label htmlFor="color">{t("color")} <span className="text-error-500">*</span></Label>
+              <Input
+                id="color"
+                type="text"
+                placeholder={t("enterColor")}
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+              />
+              <Label htmlFor="productType">{t("productType")} <span className="text-error-500">*</span></Label>
+              <Input
+                id="productType"
+                type="text"
+                placeholder={t("enterProductType")}
+                value={productType}
+                onChange={(e) => setProductType(e.target.value)}
+              />
+            </div>
+          )}
           {/* Common fields - show when brand is selected */}
           {brandId && (
             <>

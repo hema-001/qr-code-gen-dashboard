@@ -43,6 +43,7 @@ interface Product {
     ml?: string;
     code_type?: string;
     color?: string;
+    product_type?: string;
   };
   Brand?: {
     id: number;
@@ -678,7 +679,8 @@ export default function CodeGeneratorPage() {
   // VGOD: flavor, ml, mg
   // tokoyejuice: code_type, flavor, mg
   // permablends: color only
-  type ColumnKey = "flavor" | "ml" | "mg" | "codeType" | "color";
+  // dynamiccolor: color and product_type
+  type ColumnKey = "flavor" | "ml" | "mg" | "codeType" | "color" | "productType";
 
   const getBrandColumns = (brandName: string): ColumnKey[] => {
     switch (brandName) {
@@ -688,6 +690,8 @@ export default function CodeGeneratorPage() {
         return ["codeType", "flavor", "mg"];
       case "permablends":
         return ["color"];
+      case "dynamiccolor":
+        return ["color", "productType"];
       default:
         return ["codeType", "flavor", "mg"];
     }
@@ -699,6 +703,7 @@ export default function CodeGeneratorPage() {
     mg: t("mg"),
     codeType: t("codeType"),
     color: t("color"),
+    productType: t("productType"),
   };
 
   const getColumnValue = (
@@ -717,6 +722,8 @@ export default function CodeGeneratorPage() {
         return product?.attributes?.code_type || fallback;
       case "color":
         return product?.attributes?.color || fallback;
+      case "productType":
+        return product?.attributes?.product_type || fallback;
       default:
         return fallback;
     }
